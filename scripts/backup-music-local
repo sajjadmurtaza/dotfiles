@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# backup-itunes
+#
+# Backs up the local iTunes Music library to a remote server on the local
+# network via SSH using `rsync`.
+
+set -euo pipefail
+
+source_dir="${MUSIC_SOURCE_DIR:-$HOME/Music/Music/Media.localized}"
+destination="${MUSIC_SSH_BACKUP_DESTINATION:-}"
+
+if [[ ! -d "$source_dir" ]]; then
+  echo "Error: music source directory does not exist: $source_dir" >&2
+  exit 1
+fi
+
+if [[ -z "$destination" ]]; then
+  echo "Error: set MUSIC_SSH_BACKUP_DESTINATION to an rsync SSH destination." >&2
+  echo "Example: user@backup-host:/path/to/music" >&2
+  exit 1
+fi
+
+rsync_args=(
+  --archive
+  --verbose
+  --human-readable
+  --itemize-changes
+  --progress
+  --prune-empty-dirs
+  --delete
+  -e ssh
+)
+
+if [[ "${BACKUP_APPLY:-0}" != "1" ]]; then
+  rsync_args+=(--dry-run)
+  echo "Dry run only. Set BACKUP_APPLY=1 to transfer files and apply deletions."
+fi
+
+rsync "${rsync_args[@]}" "$source_dir/" "$destination"

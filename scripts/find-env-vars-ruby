@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+#
+# find-env-vars-ruby
+#
+# Uses `ripgrep` (rg) to find and list all environment variables accessed in
+# Ruby code within the current directory. Useful for auditing a codebase to
+# ensure all required ENV variables are documented and accounted for.
+
+# frozen_string_literal: true
+
+# loosely based on https://sosedoff.com/2016/11/26/find-environment-variables.html
+
+# simple check if ripgrep is installed
+system('rg', '--version', exception: true)
+
+items = `rg --no-heading -w "ENV"`.split("\n").flat_map do |line|
+  Regexp.last_match(1) if line =~ /ENV.fetch\(['"](\w+)['"]\)/ || line =~ /ENV\[['"](\w+)['"]\]/
+end
+
+if items.empty?
+  puts 'No mention of environment variables found'
+else
+  puts 'Found these environment variables:'
+  puts items.uniq.sort_by(&:to_s)
+end

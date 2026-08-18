@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# serve
+#
+# Starts a local web server in the current directory. Prefers `caddy` if
+# installed (using a local `Caddyfile` if present), otherwise falls back to
+# Ruby's built-in HTTP server.
+
+set -euo pipefail
+
+function command_exists {
+  type "$1" >/dev/null 2>&1;
+}
+
+if command_exists caddy; then
+  if [ -f "./Caddyfile" ]; then
+    caddy run --watch
+  else
+    port="${PORT:-8080}"
+    caddy file-server --browse --root . --listen "127.0.0.1:$port"
+  fi
+else
+  port="${PORT:-8080}"
+  ruby -run -e httpd . -p "$port"
+fi

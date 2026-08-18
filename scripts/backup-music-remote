@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# backup-music-remote
+#
+# Synchronizes the local iTunes Music library with a remote backup location
+# (assumed to be a cloud provider) using rclone.
+
+set -euo pipefail
+
+if ! command -v rclone &>/dev/null; then
+  echo "Error: rclone not found or not installed."
+  exit 1
+fi
+
+source_dir="${MUSIC_SOURCE_DIR:-$HOME/Music/Music/Media.localized}"
+destination="${MUSIC_RCLONE_DESTINATION:-}"
+
+if [[ ! -d "$source_dir" ]]; then
+  echo "Error: music source directory does not exist: $source_dir" >&2
+  exit 1
+fi
+
+if [[ -z "$destination" ]]; then
+  echo "Error: set MUSIC_RCLONE_DESTINATION to a configured rclone destination." >&2
+  echo "Example: my-remote:backups/music" >&2
+  exit 1
+fi
+
+rclone_args=(sync --progress)
+
+if [[ "${BACKUP_APPLY:-0}" != "1" ]]; then
+  rclone_args+=(--dry-run)
+  echo "Dry run only. Set BACKUP_APPLY=1 to transfer files and apply deletions."
+fi
+
+rclone "${rclone_args[@]}" "$source_dir/" "$destination"

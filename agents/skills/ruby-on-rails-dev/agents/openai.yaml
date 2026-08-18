@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ruby on Rails Dev"
+  short_description: "Rails conventions, security, data, jobs, and tests."
+  default_prompt: "Use $ruby-on-rails-dev with $dev and $ruby-dev to make this Rails change with repository-native conventions, KISS design, version-aware APIs, focused tests, and explicit security and data checks."

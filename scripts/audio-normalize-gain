@@ -1,0 +1,362 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Audio Loudness Normalizer (Gain-Only, True-Peak Safe)
+# -----------------------------------------------------
+# Purpose:
+# - Batch-normalize mixed audio libraries (e.g., Bandcamp purchases) to a common
+#   perceived loudness target *without* compression or limiting (gain-only).
+# - Preserve dynamics and avoid clipping via a True-Peak (TP) ceiling guard.
+# - Output lossless FLAC, preserve metadata/cover art where possible.
+#
+# Key Features:
+# - Two-pass approach: measure with ffmpeg's ebur128 filter, then apply gain.
+# - True-Peak guard: caps gain if input_tp + gain would exceed a TP ceiling.
+# - Accurate metrics: uses ebur128 for industry-standard R128 measurement.
+# - Stream mapping: `-map 0` + copy non-audio streams (cover/chapters) when possible.
+# - Parallel processing with progress bar and structured logging.
+#
+# Requirements:
+# - ffmpeg, ffprobe (on PATH)
+# - Ruby 3.x recommended
+# - Gems (installed inline automatically): parallel, ruby-progressbar
+#
+# Example:
+#   ./audio-normalize-gain -i ./input -o ./normalized \
+#     --target-lufs -9.0 --tp-ceil -1.0 --tp-safety 0.1
+#
+# Dry run:
+#   ./audio-normalize-gain -i ./input -o ./normalized --dry-run
+#
+# Notes:
+# - Lossy inputs (e.g., MP3/AAC) are supported, but will be re-muxed to FLAC containers.
+# - Cover art transfer from some inputs may be imperfect; ffmpeg container/codec
+#   semantics apply. If needed, add a post-step to (re-)attach covers specifically.
+
+require 'bundler/inline'
+require 'etc'
+require 'fileutils'
+require 'logger'
+require 'open3'
+require 'optparse'
+require 'parallel'
+require 'ruby-progressbar'
+require 'shellwords'
+require 'json'
+
+# --- Inline gem handling ---
+gemfile(true) do
+  source 'https://rubygems.org'
+  gem 'parallel'
+  gem 'ruby-progressbar'
+end
+
+# --- Configuration ---
+module Config
+  # Loudness target (integrated) in LUFS. Typical techno: -10..-8
+  DEFAULT_LUFS_TARGET = -7.0
+
+  # True-Peak ceiling in dBTP (recommended: -1.0)
+  DEFAULT_TP_CEIL = -0.05
+
+  # Small safety margin to avoid inter-sample peak excursions (0.00..0.20)
+  DEFAULT_TP_SAFETY = 0.05
+
+  # Loudness bias (calibration offset) to compensate for meter differences
+  DEFAULT_BIAS = -0.5
+
+  # Accept "close enough" (skip processing if |gain| <= tolerance)
+  DEFAULT_TOLERANCE = 0.05
+
+  # Degree of parallelism (defaults to number of logical CPUs)
+  DEFAULT_JOBS = Etc.nprocessors
+
+  # Supported input extensions (case-insensitive)
+  SUPPORTED_EXT = %w[.mp3 .wav .m4a .mp4 .aac .flac .aiff .aif .alac .ogg .opus].freeze
+
+  # Default log path
+  DEFAULT_LOG = 'lufs_normalization.log'
+
+  # Metadata clean-up / mapping hints for ffmpeg
+   FFMPEG_METADATA = [
+    # Copy global metadata first
+    '-map_metadata', '0',
+
+    # --- Normalization / loudness tags (strip all) ---
+    '-metadata', 'iTunNORM=',
+    '-metadata', 'iTunSMPB=',
+    '-metadata', 'REPLAYGAIN_TRACK_GAIN=',
+    '-metadata', 'REPLAYGAIN_ALBUM_GAIN=',
+    '-metadata', 'REPLAYGAIN_TRACK_PEAK=',
+    '-metadata', 'REPLAYGAIN_ALBUM_PEAK=',
+    '-metadata', 'R128_TRACK_GAIN=',
+    '-metadata', 'R128_ALBUM_GAIN=',
+    '-metadata', 'RGAD=',
+    '-metadata', 'MP3GAIN_MINMAX=',
+    '-metadata', 'MP3GAIN_UNDO=',
+    '-metadata', 'QUADRATEK_GAIN=',   # rare legacy
+
+    # --- Player / store extras that add noise ---
+    '-metadata', 'ENCODER=',
+    '-metadata', 'ENCODER_SETTINGS=',
+    '-metadata', 'ENCODEDBY=',
+    '-metadata', 'SYNOPSIS=',
+    '-metadata', 'DESCRIPTION=',
+    '-metadata', 'LONGDESCRIPTION=',
+    '-metadata', 'iTunMOVI=',
+    '-metadata', 'iTunes_CDDB_TrackNumber=',
+    '-metadata', 'ACCOUNT=',
+    '-metadata', 'ACCOUNT_ID=',
+  ].freeze
+end
+
+# --- CLI options ---
+options = {
+  input_dir: 'input',
+  output_dir: 'normalized',
+  dry_run: false,
+  log_file: Config::DEFAULT_LOG,
+  lufs_target: Config::DEFAULT_LUFS_TARGET,
+  tp_ceil: Config::DEFAULT_TP_CEIL,
+  tp_safety: Config::DEFAULT_TP_SAFETY,
+  tolerance: Config::DEFAULT_TOLERANCE,
+  lufs_bias: Config::DEFAULT_BIAS,
+  jobs: Config::DEFAULT_JOBS
+}
+
+opt_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
+
+  opts.on('-i', '--input DIR', 'Input directory (default: input)') do |v|
+    options[:input_dir] = File.expand_path(v)
+  end
+
+  opts.on('-o', '--output DIR', 'Output directory (default: normalized)') do |v|
+    options[:output_dir] = File.expand_path(v)
+  end
+
+  opts.on('--target-lufs N', Float, "Target LUFS (default: #{Config::DEFAULT_LUFS_TARGET})") do |v|
+    options[:lufs_target] = v
+  end
+
+  opts.on('--bias N', Float, "Loudness bias dB (default: #{Config::DEFAULT_BIAS})") do |v|
+    options[:lufs_bias] = v
+  end
+
+  opts.on('--tp-ceil N', Float, "True-Peak ceiling dBTP (default: #{Config::DEFAULT_TP_CEIL})") do |v|
+    options[:tp_ceil] = v
+  end
+
+  opts.on('--tp-safety N', Float, "True-Peak safety margin dB (default: #{Config::DEFAULT_TP_SAFETY})") do |v|
+    options[:tp_safety] = v
+  end
+
+  opts.on('--tolerance N', Float, "Gain tolerance dB (default: #{Config::DEFAULT_TOLERANCE})") do |v|
+    options[:tolerance] = v
+  end
+
+  opts.on('-j', '--jobs N', Integer, "Parallel jobs (default: #{Config::DEFAULT_JOBS})") do |v|
+    options[:jobs] = [v, 1].max
+  end
+
+  opts.on('--dry-run', 'Perform a dry run without writing files') do
+    options[:dry_run] = true
+  end
+
+  opts.on('--log FILE', "Log file (default: #{Config::DEFAULT_LOG})") do |v|
+    options[:log_file] = File.expand_path(v)
+  end
+
+  opts.on('-h', '--help', 'Show this help') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  opt_parser.parse!
+rescue OptionParser::InvalidOption => e
+  warn e
+  warn opt_parser
+  exit 1
+end
+
+# --- Validations & Setup ---
+abort "❌ Input directory #{options[:input_dir]} does not exist." unless Dir.exist?(options[:input_dir])
+FileUtils.mkdir_p(options[:output_dir]) unless Dir.exist?(options[:output_dir])
+
+logger = Logger.new(options[:log_file])
+logger.level = Logger::INFO
+
+def check_tool(cmd, name, logger)
+  return if system("which #{cmd} > /dev/null 2>&1")
+
+  logger.fatal("Required tool '#{name}' not found. Please install it and try again.")
+  abort "❌ Required tool '#{name}' not found. Please install it and try again."
+end
+
+logger.info('🔍 Checking for required CLI tools...')
+check_tool('ffmpeg', 'ffmpeg', logger)
+check_tool('ffprobe', 'ffprobe', logger)
+
+# --- Utils ---
+def scan_files(base)
+  Dir.glob("#{base}/**/*", File::FNM_CASEFOLD).select do |file|
+    File.file?(file) && Config::SUPPORTED_EXT.include?(File.extname(file).downcase)
+  end
+end
+
+def detect_metrics(file, opts, logger)
+  cmd = [
+    'ffmpeg', '-nostats', '-hide_banner', '-i', file,
+    # Use ebur128 for scientific accuracy (avoids loudnorm's measurement bias)
+    # We use the user-provided target to improve the gating consistency
+    '-af', "ebur128=peak=true:target=#{opts[:lufs_target]}",
+    '-f', 'null', '-'
+  ]
+  out, status = Open3.capture2e(*cmd)
+  unless status.success?
+    logger.error("ffmpeg failed during metrics for #{file}")
+    return nil
+  end
+
+  # Isolate the final Summary block to avoid matching per-frame updates
+  # We look for the last "Summary:" and ensure we only parse what follows it.
+  summary_index = out.rindex(/Summary:/i)
+  if summary_index.nil?
+    logger.error("Could not find ebur128 summary in ffmpeg output for #{file}")
+    return nil
+  end
+  summary_part = out[summary_index..]
+
+  # Robust float regex: handles .5, 5., 5.0, and +/- inf
+  float_re = /[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?|[-+]?inf/i
+
+  # Match Integrated Loudness
+  i_match = summary_part.match(/I:\s+(#{float_re})\s+LUFS/i)
+
+  # Match Peak (True Peak). ffmpeg may use dBFS or dBTP depending on version/config
+  # We collect all "Peak:" matches in the summary to handle multi-channel outputs
+  tp_values = summary_part.scan(/Peak:\s+(#{float_re})\s+dB(?:FS|TP)/i).flatten
+
+  if i_match && !tp_values.empty?
+    return {
+      input_i: i_match[1].to_f,
+      input_tp: tp_values.map(&:to_f).max
+    }
+  end
+
+  logger.error("Could not parse ebur128 metrics from summary for #{file}")
+  nil
+rescue StandardError => e
+  logger.error("Metric detection failed for #{file}: #{e.message}")
+  nil
+end
+
+def ffmpeg_output_path(input_dir, output_dir, infile)
+  rel = infile.sub(%r{\A#{Regexp.escape(input_dir)}/?}i, '').sub(%r{\A\./}, '')
+  out_dir = File.join(output_dir, File.dirname(rel))
+  FileUtils.mkdir_p(out_dir)
+  File.join(out_dir, "#{File.basename(rel, '.*')}.flac")
+end
+
+def build_ffmpeg_command_normalize(input_path, gain_db, output_path)
+  [
+    'ffmpeg', '-y', '-nostats', '-hide_banner',
+    '-i', input_path,
+    '-map', '0',                 # include all input streams (cover/chapters)
+    '-map_metadata', '0',        # copy global metadata
+    '-af', format('volume=%.3fdB', gain_db),
+    *Config::FFMPEG_METADATA,
+    '-c:a', 'flac', '-compression_level', '8',
+    '-c:v', 'copy', '-c:s', 'copy', '-c:d', 'copy', # copy non-audio streams where possible
+    '-metadata', "GAIN_NORMALIZED=#{gain_db.round(2)}",
+    output_path
+  ]
+end
+
+def build_ffmpeg_command_copy(input_path, output_path)
+  [
+    'ffmpeg', '-y', '-nostats', '-hide_banner',
+    '-i', input_path,
+    '-map', '0',
+    '-map_metadata', '0',
+    *Config::FFMPEG_METADATA,
+    '-c:a', 'flac', '-compression_level', '8',
+    '-c:v', 'copy', '-c:s', 'copy', '-c:d', 'copy',
+    '-metadata', 'GAIN_NORMALIZED=0.0',
+    output_path
+  ]
+end
+
+def execute_command(cmd, dry_run, logger)
+  if dry_run
+    msg = "🧪 Dry run: would execute: #{cmd.join(' ')}"
+    logger.info(msg)
+    return msg
+  end
+
+  ok = system(*cmd)
+  unless ok
+    msg = "❌ Command failed: #{cmd.join(' ')}"
+    logger.error(msg)
+    return msg
+  end
+  true
+rescue StandardError => e
+  msg = "❌ Exception executing: #{e.message}"
+  logger.error(msg)
+  msg
+end
+
+def process_file(infile, opts, logger)
+  outfile = ffmpeg_output_path(opts[:input_dir], opts[:output_dir], infile)
+  return "⏩ Already exists: #{infile}" if File.exist?(outfile) && !opts[:dry_run]
+
+  m = detect_metrics(infile, opts, logger)
+  return "⚠️ Could not detect metrics: #{infile}" unless m
+
+  # Apply bias to the measured integrated loudness for calibration
+  in_i  = m[:input_i]
+  in_tp = m[:input_tp]
+  biased_i = in_i + opts[:lufs_bias]
+
+  gain_needed = opts[:lufs_target] - biased_i
+  max_gain    = opts[:tp_ceil] - in_tp - opts[:tp_safety]
+  applied     = [gain_needed, max_gain].min
+  tp_limited  = applied < gain_needed
+
+  if applied.abs <= opts[:tolerance]
+    msg = execute_command(build_ffmpeg_command_copy(infile, outfile), opts[:dry_run], logger)
+    return msg.is_a?(String) ? msg : "✅ Close enough (#{in_i.round(2)} LUFS) → copy"
+  end
+
+  msg = execute_command(build_ffmpeg_command_normalize(infile, applied, outfile), opts[:dry_run], logger)
+  return msg if msg.is_a?(String)
+
+  bias_str = opts[:lufs_bias] == 0 ? "" : format(" (bias applied: %.1f)", opts[:lufs_bias])
+  "🎧 gain #{applied.round(2)} dB (in_i=#{in_i.round(2)} LUFS#{bias_str}, tp=#{in_tp.round(2)} dBTP, tp_limited=#{tp_limited}) → #{outfile}"
+end
+
+# --- Main execution ---
+files = scan_files(options[:input_dir])
+
+puts "📂 Input:  #{options[:input_dir]}"
+puts "📄 Output: #{options[:output_dir]}"
+puts "🎚  Target LUFS: #{options[:lufs_target]} | TP ceil: #{options[:tp_ceil]} | Safety: #{options[:tp_safety]} | Tol: #{options[:tolerance]}"
+puts "🧵 Jobs:   #{options[:jobs]}#{options[:dry_run] ? '  (dry-run)' : ''}"
+puts "🗘️ Logging to: #{options[:log_file]}"
+logger.info("🚀 Start#{options[:dry_run] ? ' (dry-run)' : ''}: #{files.size} files, jobs=#{options[:jobs]}, target_lufs=#{options[:lufs_target]}, tp_ceil=#{options[:tp_ceil]}, safety=#{options[:tp_safety]}")
+
+progressbar = ProgressBar.create(total: files.size, format: '%a %B %p%% %t')
+
+results = Parallel.map(files, in_processes: options[:jobs]) do |file|
+  res = process_file(file, options, logger)
+  logger.info(res)
+  progressbar.increment
+  res
+end
+
+puts "\n📦 Summary:"
+results.each { |r| puts r }
+logger.info("✅ Completed. Processed #{files.size} files.")

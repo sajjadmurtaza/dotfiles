@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+#
+# audio_compress
+#
+# Applies dynamic range compression to an audio file using ffmpeg's 'compand'
+# filter. Useful for creating a consistent listening experience in noisy
+# environments by reducing the difference between loud and quiet parts.
+
+# frozen_string_literal: true
+
+require 'shellwords'
+require 'fileutils'
+
+# Function to print usage information
+def print_usage_and_exit
+  puts <<~HELP
+    Usage: audio_compress [OPTIONS] [AUDIO_FILE]
+
+    Generates a compressed, equally loud everywhere file.
+    Idea and ffmpeg taken from:
+    https://medium.com/@jud.dagnall/dynamic-range-compression-for-audio-with-ffmpeg-and-compand-621fe2b1a892
+
+    Options:
+      --help, -h  Prints this help.
+  HELP
+  exit 1
+end
+
+# Check if no arguments or help option is provided
+print_usage_and_exit if ARGV.empty? || ['--help', '-h'].include?(ARGV[0])
+
+# Extract filename from arguments
+file_name = ARGV[0]
+
+# Check if file exists and is readable
+unless File.exist?(file_name) && File.readable?(file_name)
+  raise "Error: File '#{file_name}' does not exist or is not readable."
+end
+
+# Determine output filename without extension
+file_name_without_extension = File.basename(file_name, '.*')
+out = "#{file_name_without_extension}.compressed.wav"
+
+# Escape filename for shell safety
+escaped_file_name = Shellwords.escape(file_name)
+
+# Execute ffmpeg command to apply audio compression
+ffmpeg_command = "ffmpeg -i #{escaped_file_name} " \
+                 "-filter_complex 'compand=attacks=0:points=-80/-900|-45/-15|-27/-9|0/-7|20/-7:gain=5' " \
+                 "#{Shellwords.escape(out)}"
+
+# Execute the ffmpeg command
+success = system(ffmpeg_command)
+
+# Check if the ffmpeg command executed successfully
+raise 'Error: ffmpeg command failed with non-zero exit status.' unless success
+
+puts "Compression complete. Output file: #{out}"

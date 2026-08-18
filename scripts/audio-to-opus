@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+#
+# encode_to_opus
+#
+# Encodes an audio file to the Opus format using ffmpeg, creating a 64k VBR
+# file ideal for high-quality, low-bitrate applications like streaming.
+
+# frozen_string_literal: true
+
+require 'shellwords'
+require 'fileutils'
+
+if ARGV.empty? || ['--help', '-h'].include?(ARGV[0])
+  puts <<~HELP
+    Usage: encode_to_opus [FILE]
+
+    Options:
+
+      --help, -h  Prints this help.
+
+    Creates a 64k VBR OPUS audio file with a frame_duration of 40ms.
+  HELP
+
+  ARGV.empty? ? abort : exit
+end
+
+file_name = ARGV[0]
+
+raise 'File does not exist!' unless File.exist?(file_name)
+raise "Can't read given file" unless File.readable?(file_name)
+
+file_name_without_extension = File.basename(file_name, '.*')
+
+out = "#{file_name_without_extension}.opus"
+
+system "ffmpeg -i #{Shellwords.escape file_name} \
+        -c:a libopus \
+        -b:a 64k \
+        -frame_duration 40 \
+        -dash 1 \
+         #{Shellwords.escape out}"

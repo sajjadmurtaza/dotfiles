@@ -1,0 +1,10 @@
+brakeman
+bundler
+byebug
+rubocop
+rubocop-performance
+rubocop-rails
+rubocop-rspec
+rubocop-thread_safety
+test-prof
+yard

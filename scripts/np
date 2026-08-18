@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+# np
+#
+# Checks if the Music app is running and prints the artist and title of the
+# "now playing" track.
+
+set -euo pipefail
+
+if [ "$(pgrep Music | wc -l)" -gt 0 ]; then
+  artist=$(osascript -e 'tell application "Music" to artist of current track as string');
+  title=$(osascript -e 'tell application "Music" to name of current track as string');
+
+  echo "$artist － $title"
+else
+ echo "Music isn't running"
+fi

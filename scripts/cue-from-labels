@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+#
+# label2cue
+#
+# Converts a text file from Audacity's "Export Labels" format into a
+# standard CUE sheet, printing the result to standard output. Useful for
+# splitting long recordings into tracks without re-encoding.
+
+# frozen_string_literal: true
+
+if ARGV.empty?
+  puts <<~HELP
+    Usage: label2cue label_track.txt
+
+    Contents of label_track.txt should follow:
+    0 0 First track
+    261.405839 261.405839 2nd track
+    601.796775 601.796775 3rd track
+    1054.361545 1054.361545 4th track
+    1348.886096 1348.886096 5th track
+    1716.530426 1716.530426 6th track
+    2085.741388 2085.741388 7th track
+    ...
+
+    This script will create the corresponding cue sheet file.
+  HELP
+
+  exit 1
+end
+
+file_name = ARGV[0]
+
+raise ArgumentError, 'File does not exist!' unless File.exist?(file_name)
+
+raise "Can't read given file" unless File.readable?(file_name)
+
+tracks = File.read(file_name).lines.map(&:strip).reject(&:empty?).map do |line|
+  split = line.split(' ')
+
+  raise "Incorrect format in line: #{line}" if split.size < 3
+
+  start_time = split[0].to_f
+  title = split[2..].join(' ')
+
+  minutes = (start_time / 60).to_i
+  seconds = (start_time % 60).to_i
+  frames = ((start_time % 1) * 75).to_i
+
+  formatted_time = format('%<minutes>02d:%<seconds>02d:%<frames>02d', minutes:, seconds:,
+                                                                      frames:)
+
+  { time: formatted_time, title:, performer: '' }
+end
+
+tracks = tracks.each_with_index.map do |track, index|
+  <<~STRING
+    TRACK #{format('%02d', index + 1)} AUDIO
+      PERFORMER "#{track[:performer]}"
+      TITLE "#{track[:title]}"
+      INDEX 01 #{track[:time]}
+  STRING
+end
+
+puts <<~CUESHEET
+    PERFORMER ""
+    TITLE ""
+    FILE "#{File.basename(file_name, '.*')}.mp3" MP3
+  #{tracks.join}
+CUESHEET

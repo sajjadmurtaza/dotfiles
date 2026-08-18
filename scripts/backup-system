@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# backup
+#
+# Performs a full system backup to an external volume using `rsync`. It
+# archives the root directory (`/`) while excluding numerous system, cache,
+# and temporary directories. Logs output and timing, and uses `caffeinate`
+# to prevent sleep during the backup.
+
+set -euo pipefail
+
+backup_root="${SYSTEM_BACKUP_DIR:-}"
+
+if [[ -z "$backup_root" ]]; then
+  echo "Error: set SYSTEM_BACKUP_DIR to a mounted external-volume directory." >&2
+  echo "Example: /Volumes/MyBackup" >&2
+  exit 1
+fi
+
+case "$backup_root" in
+/Volumes/*) ;;
+*)
+  echo "Error: SYSTEM_BACKUP_DIR must be below /Volumes." >&2
+  exit 1
+  ;;
+esac
+
+if [[ ! -d "$backup_root" || ! -w "$backup_root" ]]; then
+  echo "Error: backup volume is unavailable or not writable: $backup_root" >&2
+  exit 1
+fi
+
+backup_dir="${backup_root%/}/Backup_$(hostname -s)"
+rsync_args=(
+  --archive
+  --verbose
+  --human-readable
+  --itemize-changes
+  --progress
+  --compress
+  --delete
+  --delete-excluded
+  --exclude=/Benutzerinformationen
+  --exclude=/Network
+  --exclude=/System
+  --exclude=/Volumes
+  --exclude=/bin
+  --exclude=/cores
+  --exclude=/dev
+  --exclude=/mach_kernel
+  --exclude=/net
+  --exclude=/private
+  --exclude=/sbin
+  --exclude=/tmp
+  --exclude=/usr
+  --exclude=/var
+  '--exclude=*/.Trash/*'
+  '--exclude=*/.DS_Store'
+  --exclude=/Applications
+  '--exclude=*/Cache*/'
+  --exclude=/Library/Apple/
+  '--exclude=*/Downloads'
+  '--exclude=*.app'
+  '--exclude=*/.cache/*'
+  '--exclude=*.docset*'
+)
+
+start=$(date "+%s")
+
+if [[ "${BACKUP_APPLY:-0}" != "1" ]]; then
+  echo "Dry run only. Set BACKUP_APPLY=1 to copy files and apply deletions."
+  caffeinate sudo rsync "${rsync_args[@]}" --dry-run /* "$backup_dir"
+  exit 0
+fi
+
+mkdir -p "$backup_dir" "$HOME/Documents/Backup"
+caffeinate sudo rsync "${rsync_args[@]}" /* "$backup_dir" 2>&1 |
+  tee "$HOME/Documents/Backup/$(date '+%Y-%m-%d_%H%M%S.log')"
+
+finish=$(date "+%s")
+date '+%Y-%m-%d %H:%M:%S' >"$backup_dir/_lastbackup.log"
+echo "total time: $(((finish - start) / 60)) minutes, $(((finish - start) % 60)) seconds" >>"$backup_dir/_lastbackup.log"

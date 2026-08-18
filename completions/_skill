@@ -1,0 +1,60 @@
+#compdef skill
+
+local store_dir="${HOME}/.dotfiles/skills"
+
+_skill_store_names() {
+  local -a skills
+  skills=(${(f)"$(command ls -1 "$store_dir" 2>/dev/null)"})
+  skills=(${skills:#.*})
+  print -l -- $skills
+}
+
+_skill_project_root() {
+  git rev-parse --show-toplevel 2>/dev/null || pwd
+}
+
+_skill_project_names() {
+  local project_root project_dir
+  project_root="$(_skill_project_root)"
+  project_dir="${project_root}/.agents/skills"
+  local -a skills
+  skills=(${(f)"$(command ls -1 "$project_dir" 2>/dev/null)"})
+  skills=(${skills:#.*})
+  print -l -- $skills
+}
+
+_skill_commands() {
+  local -a commands
+  commands=(
+    'list:list stored skills'
+    'promote:move a project skill from .agents/skills into dotfiles'
+    'rename:rename a stored skill'
+    'help:show usage'
+  )
+  _describe -t commands 'skill command' commands
+}
+
+local curcontext="$curcontext" state line
+typeset -A opt_args
+
+_arguments -C \
+  '(-p --project)'{-p,--project}'[project root]:project root:_files -/' \
+  '1:command:_skill_commands' \
+  '*::arg:->args'
+
+case "$state" in
+  args)
+    case "${line[1]:-${words[2]:-}}" in
+      promote)
+        _describe -t skills 'project skill' "$(_skill_project_names)"
+        ;;
+      rename)
+        if (( CURRENT == 3 )); then
+          _describe -t skills 'stored skill' "$(_skill_store_names)"
+        elif (( CURRENT == 4 )); then
+          _message 'new skill name'
+        fi
+        ;;
+    esac
+    ;;
+esac

@@ -1,0 +1,257 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: gh-review-comments [--filter all|resolved|unresolved] [--format text|json] [--no-truncate] [<pr-url | pr-number>]
+
+Fetch all review comments for a PR. Defaults to the current PR for the checked-out branch if no arguments are provided.
+Examples:
+  gh-review-comments https://github.com/org/repo/pull/2470
+  gh-review-comments --filter unresolved --format json https://github.com/org/repo/pull/2470
+  gh-review-comments -f all 2470  # PR number, owner/repo inferred from current repo via gh
+  gh-review-comments
+EOF
+}
+
+require_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Missing dependency: $1" >&2
+    exit 1
+  fi
+}
+
+filter="all"
+format="text"
+truncate_body=true
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -f|--filter)
+      filter="${2-}"
+      shift 2
+      ;;
+    -o|--format)
+      format="${2-}"
+      shift 2
+      ;;
+    --no-truncate)
+      truncate_body=false
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    --*)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+pr_input="${1-}"
+
+if [[ "$filter" != "all" && "$filter" != "resolved" && "$filter" != "unresolved" ]]; then
+  echo "Invalid --filter value: $filter" >&2
+  usage
+  exit 1
+fi
+
+if [[ "$format" != "text" && "$format" != "json" ]]; then
+  echo "Invalid --format value: $format" >&2
+  usage
+  exit 1
+fi
+
+require_cmd gh
+require_cmd jq
+
+resolve_current_pr() {
+  local pr_json repo_info
+  pr_json=$(gh pr view --json number,url 2>/dev/null || true)
+  if [[ -z "$pr_json" || "$pr_json" == "null" ]]; then
+    return 1
+  fi
+
+  pr_number=$(printf '%s' "$pr_json" | jq -r '.number // empty')
+  pr_url=$(printf '%s' "$pr_json" | jq -r '.url // empty')
+  repo_info=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
+
+  if [[ -z "$repo_info" || "$repo_info" != */* ]]; then
+    return 1
+  fi
+
+  owner="${repo_info%%/*}"
+  repo="${repo_info##*/}"
+
+  if [[ -z "$owner" || -z "$repo" || -z "$pr_number" || -z "$pr_url" ]]; then
+    return 1
+  fi
+}
+
+if [[ "$pr_input" =~ github.com/([^/]+)/([^/]+)/pull[s]?/([0-9]+) ]]; then
+  owner="${BASH_REMATCH[1]}"
+  repo="${BASH_REMATCH[2]}"
+  pr_number="${BASH_REMATCH[3]}"
+  pr_url="https://github.com/${owner}/${repo}/pull/${pr_number}"
+elif [[ "$pr_input" =~ ^[0-9]+$ ]]; then
+  repo_info=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
+  if [[ -z "$repo_info" ]]; then
+    echo "Could not infer owner/repo from current directory. Provide full PR URL." >&2
+    exit 1
+  fi
+  owner="${repo_info%%/*}"
+  repo="${repo_info##*/}"
+  pr_number="$pr_input"
+  pr_url="https://github.com/${owner}/${repo}/pull/${pr_number}"
+elif [[ -z "$pr_input" ]]; then
+  if ! resolve_current_pr; then
+    echo "No PR found for the current branch. Provide a PR URL or number." >&2
+    exit 1
+  fi
+else
+  echo "PR URL or number is required (e.g., https://github.com/<owner>/<repo>/pull/<number>)" >&2
+  exit 1
+fi
+
+# Fetch review threads (includes resolution state) with pagination via GraphQL.
+# shellcheck disable=SC2016
+query='
+query($owner: String!, $repo: String!, $number: Int!, $after: String) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      reviewThreads(first: 100, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          isResolved
+          path
+          line
+          comments(first: 100) {
+            nodes {
+              author {
+                login
+              }
+              body
+              createdAt
+              url
+            }
+          }
+        }
+      }
+    }
+  }
+}
+'
+
+threads_json='[]'
+after_cursor=""
+while :; do
+  response=$(
+    if [[ -n "$after_cursor" ]]; then
+      gh api graphql -f query="$query" -F owner="$owner" -F repo="$repo" -F number="$pr_number" -F after="$after_cursor"
+    else
+      gh api graphql -f query="$query" -F owner="$owner" -F repo="$repo" -F number="$pr_number"
+    fi
+  ) || {
+    echo "Failed to fetch review threads." >&2
+    exit 1
+  }
+
+  nodes=$(printf '%s' "$response" | jq '.data.repository.pullRequest.reviewThreads.nodes')
+  threads_json=$(jq -s 'add' <(printf '%s' "$threads_json") <(printf '%s' "$nodes"))
+
+  has_next=$(printf '%s' "$response" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+  if [[ "$has_next" != "true" ]]; then
+    break
+  fi
+  after_cursor=$(printf '%s' "$response" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
+done
+
+threads_json=$(printf '%s' "$threads_json" | jq '
+  map({
+    thread_id: .id,
+    resolved: .isResolved,
+    path: .path,
+    line: .line,
+    html_url: (.comments.nodes[0].url // ""),
+    comments: (.comments.nodes | map({
+      user: { login: (.author.login // "unknown") },
+      created_at: .createdAt,
+      body: .body,
+      html_url: .url
+    }))
+  })
+')
+
+if [[ -z "$threads_json" || "$threads_json" == "null" ]]; then
+  echo "No review threads found for PR ${pr_number}" >&2
+  exit 0
+fi
+
+filtered_threads=$(printf '%s' "$threads_json" | jq --arg filter "$filter" '
+  map(select(
+    ($filter == "all") or
+    ($filter == "resolved" and .resolved == true) or
+    ($filter == "unresolved" and .resolved == false)
+  ))
+')
+
+if [[ "$format" == "json" ]]; then
+  jq -n \
+    --arg owner "$owner" \
+    --arg repo "$repo" \
+    --arg pr_number "$pr_number" \
+    --arg pr_url "${pr_url-}" \
+    --argjson threads "$filtered_threads" \
+    '{
+      pr: {
+        owner: $owner,
+        repo: $repo,
+        number: ($pr_number | tonumber),
+        url: $pr_url
+      },
+      threads: $threads
+    }'
+  exit 0
+fi
+
+printf '%s' "$filtered_threads" | jq -r \
+  --arg owner "$owner" \
+  --arg repo "$repo" \
+  --arg pr_number "$pr_number" \
+  --arg pr_url "${pr_url-}" \
+  --argjson trunc_len 800 \
+  --arg flag_truncate "$truncate_body" '
+  def status(flag): if flag then "resolved" else "unresolved" end;
+  def body_text:
+    if $flag_truncate == "true" then
+      if (.body | length) > $trunc_len then (.body[0:$trunc_len] + "...") else .body end
+    else
+      .body
+    end;
+
+  "PR \($owner)/\($repo)#\($pr_number)\nURL: \($pr_url)\n" +
+  (
+    sort_by(.comments[0].created_at) | map(
+      . as $t |
+      "Thread [\(status($t.resolved))] \($t.path // "<no-path>") line \($t.line // "-")\n  URL: \($t.html_url // "")" +
+      (if $t.comments | length == 0 then "\n  (no comments)" else
+        ("\n" + ($t.comments | sort_by(.created_at) | map(
+          "  - \(.user.login) @ \(.created_at)\n    " + (body_text | gsub("\\n"; "\\n    "))
+        ) | join("\n"))) end) + "\n"
+    ) | .[] 
+  )
+'
