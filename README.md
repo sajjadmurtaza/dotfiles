@@ -2,11 +2,16 @@
 
 [![macOS](https://img.shields.io/badge/macOS-first-111827?logo=apple)](https://www.apple.com/macos/)
 [![Ruby on Rails](https://img.shields.io/badge/Rails-ready-CC0000?logo=rubyonrails)](https://rubyonrails.org/)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Codex%20%7C%20Claude%20Code%20%7C%20Cursor-7C3AED)](agents/skills/)
 [![ShellCheck](https://github.com/sajjadmurtaza/dotfiles/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/sajjadmurtaza/dotfiles/actions/workflows/shellcheck.yml)
+
+**One setup. Three coding agents. Rails conventions first.**
 
 A macOS-first development environment for Ruby on Rails and general full-stack work. It keeps shell, Git, editor, Homebrew, utility scripts, and reusable AI agent skills in one reviewable repository.
 
 > The setup is intentionally explicit: preview links first, keep machine-specific values local, and install only what you want.
+
+[Quick start](#quick-start) · [AI agent skills](#ai-agent-skills) · [Useful commands](#useful-commands) · [Privacy and safety](#privacy-and-safety)
 
 ## What is included
 
@@ -95,29 +100,69 @@ alias work='cd "$WORKSPACE"'
 
 The repository's `zshrc` loads this file when it exists. Never commit API keys, tokens, private hostnames, or customer paths to this public repository.
 
-## Agent skills
+## AI agent skills
+
+Use the same reviewable engineering workflow in [Codex](https://developers.openai.com/codex/skills), [Claude Code](https://code.claude.com/docs/en/skills), and [Cursor](https://cursor.com/docs/skills). The skills guide an AI agent while it works on a repository; they are not Ruby gems, application dependencies, or production services.
 
 The source of truth is [`agents/skills/`](agents/skills/). The collection includes `dev`, `ruby-dev`, `ruby-on-rails-dev`, `typescript-dev`, `architecture`, `code-review`, `pull-request`, and supporting workflow skills.
 
-Browse or install them on any machine with Node.js:
+### Install once for all three agents
+
+Requires Node.js (`npx`) and GitHub access:
 
 ```sh
 # See the available skills
 npx skills add sajjadmurtaza/dotfiles/agents/skills --list
 
-# Install all skills for Codex and Cursor
-npx skills add sajjadmurtaza/dotfiles/agents/skills -g -a codex -a cursor -y
-
-# Or install only the Rails development path
+# Install all skills globally
 npx skills add sajjadmurtaza/dotfiles/agents/skills \
-  --skill dev \
-  --skill ruby-dev \
-  --skill ruby-on-rails-dev \
-  --skill code-review \
-  -g -a codex -a cursor -y
+  -g \
+  -a codex claude-code cursor \
+  -y
+
+# Verify the global installation
+npx skills list -g
 ```
 
-When this repository is installed through `rcm`, the same skills are linked into `~/.agents/skills/`. See the [skill catalog and composition guide](agents/skills/README.md) for details.
+Prefer a smaller Rails-focused set:
+
+```sh
+npx skills add sajjadmurtaza/dotfiles/agents/skills \
+  -g \
+  -a codex claude-code cursor \
+  --skill dev ruby-dev ruby-on-rails-dev code-review \
+  -y
+```
+
+For one project only, run the same command from that repository and omit `-g`.
+
+### Use a skill
+
+| Agent | Explicit invocation | Discover or verify |
+| --- | --- | --- |
+| Codex | Mention `$dev`, `$ruby-dev`, or `$ruby-on-rails-dev` | Run `/skills`; restart Codex if a new skill does not appear |
+| Claude Code | Run `/dev`, `/ruby-dev`, or `/ruby-on-rails-dev` | Run `/skills`; restart only when the top-level skills directory was created after the session started |
+| Cursor | Choose `/dev` or `/ruby-on-rails-dev` from the slash-command menu | Type `/` in Agent chat and find the skill |
+
+The agents can also select a skill automatically when your request matches its description. Explicit invocation is useful when you want a predictable workflow.
+
+### Try the Rails workflow
+
+Paste this into Codex, Claude Code, or Cursor:
+
+```text
+Use the dev, ruby-dev, and ruby-on-rails-dev skills to add account suspension.
+Follow the existing Rails architecture, keep the change KISS, add regression tests,
+run the repository's native validation, and finish with the code-review skill.
+```
+
+The intended path is:
+
+```text
+request → dev → ruby-dev → ruby-on-rails-dev → code-review → pull-request
+```
+
+When this repository is installed through `rcm`, the skills are also linked into `~/.agents/skills/`, which Codex and Cursor read as a user-level skill location. The `npx skills` command above also creates the Claude Code links. See the [skill catalog and composition guide](agents/skills/README.md) for project-level installation, detailed routing, and the complete skill index.
 
 ## Useful commands
 

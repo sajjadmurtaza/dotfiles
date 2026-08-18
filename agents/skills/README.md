@@ -1,25 +1,67 @@
-# Skills
+# Agent skills
 
-Personal skill store for a product + engineering AI skill OS: domain routers (Build entry: `dev`), Solution craft (`architecture`), and thin language adapters/overlays under `agents/skills/`. Vocabulary: [`CONTEXT.md`](CONTEXT.md).
+**One engineering workflow for Codex, Claude Code, and Cursor.**
+
+This is a portable skill store for product and engineering work: domain routers (Build entry: `dev`), Solution craft (`architecture`), and thin language adapters/overlays under `agents/skills/`. Vocabulary: [`CONTEXT.md`](CONTEXT.md).
 
 ## Install
 
-Global (user-level Cursor + Codex):
+### Global: available in every project
 
 ```sh
-npx skills add sajjadmurtaza/dotfiles/agents/skills -g -a cursor -a codex -y
+npx skills add sajjadmurtaza/dotfiles/agents/skills \
+  -g \
+  -a codex claude-code cursor \
+  -y
 ```
 
-Requires Node.js (`npx`) and GitHub access to `sajjadmurtaza/dotfiles`. Verify with `npx skills list -g`.
+Requires Node.js (`npx`) and GitHub access to `sajjadmurtaza/dotfiles`.
 
-| Intent               | Command                                                                       |
-| -------------------- | ----------------------------------------------------------------------------- |
-| Browse               | `npx skills add sajjadmurtaza/dotfiles/agents/skills --list`                   |
-| Project-level        | Same add, omit `-g`; run from the target repo                                 |
-| Specific skills      | Add `--skill <name>` (repeatable), e.g. `--skill code-review --skill docs`     |
+```sh
+npx skills list -g
+```
+
+### Project: available only in one repository
+
+Run from the target repository and omit `-g`:
+
+```sh
+npx skills add sajjadmurtaza/dotfiles/agents/skills \
+  -a codex claude-code cursor \
+  --skill dev ruby-dev ruby-on-rails-dev code-review \
+  -y
+```
+
+| Intent | Command |
+| --- | --- |
+| Browse | `npx skills add sajjadmurtaza/dotfiles/agents/skills --list` |
+| Project-level | Run the add command from the target repository without `-g` |
+| Specific skills | Add `--skill <name ...>`, such as `--skill code-review docs` |
 | This machine (`rcm`) | Manual `RCRC=<dotfiles-directory>/rcrc rcup -d <dotfiles-directory>` → `~/.agents/skills/<name>/` — [Operate the store](#operate-the-store) |
 
 Equivalent sources: `sajjadmurtaza/dotfiles`, the GitHub URL, or `…/tree/main/agents/skills`. CLI: [vercel-labs/skills](https://github.com/vercel-labs/skills).
+
+## Use
+
+Agents load matching skills automatically from their descriptions, or you can select them explicitly.
+
+| Agent | Invoke | Inspect installed skills |
+| --- | --- | --- |
+| [Codex](https://developers.openai.com/codex/skills) | Mention `$dev`, `$ruby-on-rails-dev`, or another `$skill-name` | `/skills` |
+| [Claude Code](https://code.claude.com/docs/en/skills) | Run `/dev`, `/ruby-on-rails-dev`, or another `/skill-name` | `/skills` |
+| [Cursor](https://cursor.com/docs/skills) | Select `/dev`, `/ruby-on-rails-dev`, or another skill from the slash-command menu | Type `/` in Agent chat |
+
+### Rails example
+
+```text
+Use the dev, ruby-dev, and ruby-on-rails-dev skills to implement this change.
+Follow the repository's Rails conventions, keep the solution KISS, add focused tests,
+run the native validation commands, and finish with the code-review skill.
+```
+
+Start Build work with `dev`; it routes Rails changes through `ruby-dev` and `ruby-on-rails-dev`. Use `code-review` for the assurance pass and `pull-request` when the verified change is ready to publish.
+
+> Claude Code note: this collection's personal `code-review` skill takes precedence over Claude's bundled skill with the same name. The bundled `/review` alias remains separate.
 
 ## Pipeline
 
