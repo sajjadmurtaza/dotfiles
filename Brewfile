@@ -1,93 +1,67 @@
-brew "aria2"
-brew "coreutils"
-brew "mise"
-brew "atomicparsley"
+# Each entry has one profile owner. `brew bundle --file=Brewfile` installs all
+# entries; `./install --profile NAME` selects sections and their dependencies.
+
+# profile: core
 brew "bat"
-brew "caddy"
-brew "clamav"
+brew "coreutils"
 brew "curl"
 brew "diff-so-fancy"
-brew "duti"
-brew "ffmpeg"
 brew "fzf"
 brew "gh"
 brew "git"
 brew "git-delta"
+brew "gitleaks"
 brew "gnupg"
-brew "graphviz"
 brew "jq"
 brew "lazygit"
 brew "lsd"
-brew "libpq"
-brew "mas"
+brew "mise"
 brew "moreutils"
-brew "ncdu"
-brew "nmap"
-brew "overmind"
-brew "pup"
-brew "pwgen"
 brew "rcm"
 brew "ripgrep"
-brew "rclone"
-brew "rpl"
-brew "semgrep"
 brew "shellcheck"
 brew "shfmt"
 brew "starship"
 brew "tealdeer"
 brew "tig"
-brew "topgrade"
 brew "tree"
-brew "yamllint"
-brew "zola"
 brew "zoxide"
-brew "zsh"
 brew "zsh-autosuggestions"
 brew "zsh-completions"
+
+# profile: rails
+brew "imagemagick"
+brew "libpq"
+brew "overmind"
+
+# profile: frontend
+brew "caddy"
+
+# profile: docker
+cask "docker"
+
+# profile: ai
+brew "semgrep"
+
+# profile: extras
+brew "aria2"
+brew "atomicparsley"
+brew "clamav"
+brew "ffmpeg"
+brew "graphviz"
+brew "ncdu"
+brew "nmap"
+brew "pup"
+brew "pwgen"
+brew "rclone"
+brew "rpl"
+brew "topgrade"
 brew "yt-dlp"
-cask "raycast"
-cask "appcleaner"
+brew "zola"
 cask "bitwarden"
 cask "brave-browser"
-cask "dash"
-cask "docker"
-cask "font-fira-code"
 cask "font-fira-code-nerd-font"
-cask "font-fira-sans"
-cask "font-inconsolata"
-cask "font-open-sans"
-cask "font-pt-sans"
-cask "font-roboto"
-cask "font-roboto-mono"
-cask "font-source-code-pro"
-cask "font-ubuntu-mono"
-cask "google-chrome"
-cask "keka"
-cask "latest"
-cask "libreoffice"
-cask "marta"
-cask "musicbrainz-picard"
-cask "omnifocus"
-cask "onyx"
-cask "raindropio"
+cask "raycast"
 cask "rectangle"
-cask "signal"
-cask "sourcetree"
-cask "telegram"
-cask "tor-browser"
 cask "visual-studio-code"
 cask "wezterm"
-cask "xld"
-mas "Actions", id: 1586435171
-mas "Amphetamine", id: 937984704
-mas "Boxy SVG", id: 611658502
-mas "Dark Reader for Safari", id: 1438243180
-mas "Dato", id: 1470584107
-mas "Developer", id: 640199958
-mas "Gapplin", id: 768053424
-mas "HEIC Converter", id: 1294126402
-mas "iPreview", id: 1519213509
-mas "Marked 2", id: 890031187
-mas "Mp3tag", id: 1532597159
-mas "Pandan", id: 1569600264
-mas "Xcode", id: 497799835

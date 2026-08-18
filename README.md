@@ -1,242 +1,247 @@
-# Sajjad's dotfiles
+# Sajjad's Rails-first dotfiles
 
-[![macOS](https://img.shields.io/badge/macOS-first-111827?logo=apple)](https://www.apple.com/macos/)
-[![Ruby on Rails](https://img.shields.io/badge/Rails-ready-CC0000?logo=rubyonrails)](https://rubyonrails.org/)
-[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Codex%20%7C%20Claude%20Code%20%7C%20Cursor-7C3AED)](agents/skills/)
-[![ShellCheck](https://github.com/sajjadmurtaza/dotfiles/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/sajjadmurtaza/dotfiles/actions/workflows/shellcheck.yml)
+[![Quality](https://github.com/sajjadmurtaza/dotfiles/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/sajjadmurtaza/dotfiles/actions/workflows/shellcheck.yml)
+[![Ruby on Rails](https://img.shields.io/badge/Rails-8.x-ready-CC0000?logo=rubyonrails&logoColor=white)](https://rubyonrails.org/)
+[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon-first-111827?logo=apple)](https://www.apple.com/macos/)
+[![Agent skills](https://img.shields.io/badge/skills-Codex%20%7C%20Claude%20%7C%20Cursor-7C3AED)](agents/skills/)
 
-**One setup. Three coding agents. Rails conventions first.**
+**A safe, fast workstation for Rails and full-stack work—one command, one skill source, no hidden takeover.**
 
-A macOS-first development environment for Ruby on Rails and general full-stack work. It keeps shell, Git, editor, Homebrew, utility scripts, and reusable AI agent skills in one reviewable repository.
+This is a macOS-first developer environment built around Rails conventions, `mise`, Homebrew, `rcm`, Zsh, Git, and portable agent skills. Installation always follows the same transaction:
 
-> The setup is intentionally explicit: preview links first, keep machine-specific values local, and install only what you want.
-
-[Quick start](#quick-start) · [AI agent skills](#ai-agent-skills) · [Useful commands](#useful-commands) · [Privacy and safety](#privacy-and-safety)
-
-## What is included
-
-| Area | Highlights |
-| --- | --- |
-| Ruby and Rails | RubyGems, IRB, RSpec, Rails aliases, PostgreSQL tools, Overmind, and Rails-focused agent guidance |
-| Full stack | Node.js defaults, TypeScript guidance, Docker, Caddy, GitHub CLI, and common media/network utilities |
-| Shell | Zsh, Prezto support, Starship, fzf, zoxide, completions, and practical Git helpers |
-| Editor and terminal | Vim, VS Code, WezTerm, Ghostty, tmux, and Tig configuration |
-| macOS | Homebrew bundle and an interactive macOS defaults script |
-| AI workflows | Agent skills for planning, implementation, Rails, reviews, pull requests, docs, and releases |
-
-```mermaid
-flowchart LR
-  A["Clone"] --> B["Preview with lsrc"]
-  B --> C{"Conflicts?"}
-  C -- "Yes" --> D["Back up or customize"]
-  C -- "No" --> E["Install with rcup"]
-  D --> E
-  E --> F["Shell, tools, and agent skills"]
+```text
+preview → confirm → back up conflicts → apply → verify
 ```
+
+[Quick start](#quick-start) · [Profiles](#choose-a-profile) · [Rails workflow](#rails-workflow) · [AI agents](#codex-claude-code-and-cursor) · [Safety](#privacy-and-safety)
+
+## Why this setup
+
+| Goal | Choice |
+| --- | --- |
+| Safe home-directory changes | `lsrc` preview plus timestamped backups before `rcup` |
+| Reproducible runtimes | one exact-pin [`mise.toml`](mise.toml) |
+| Selectable tools | one profiled [`Brewfile`](Brewfile), not duplicated manifests |
+| Rails-shaped development | small helpers plus a focused Rails 8.x agent skill |
+| Portable AI workflows | one canonical [`agents/skills/`](agents/skills/) tree |
+| Local privacy | identity, work paths, and secrets stay in untracked override files |
 
 ## Quick start
 
-### 1. Clone
+### 1. Prerequisites
 
-Install [Homebrew](https://brew.sh/) first, then:
+- macOS on Apple Silicon or Intel
+- [Homebrew](https://brew.sh/)
+- Git and the system Ruby (the installer uses only Ruby's standard library)
+
+### 2. Clone and preview
 
 ```sh
 mkdir -p "$HOME/work"
 git clone git@github.com:sajjadmurtaza/dotfiles.git "$HOME/work/dotfiles"
 cd "$HOME/work/dotfiles"
+
+./install --dry-run --profile rails
 ```
 
-If you use a named SSH host such as `github-secondary`, substitute it in the clone URL.
+Use `git@github-secondary:sajjadmurtaza/dotfiles.git` if your SSH config names that GitHub account `github-secondary`.
 
-### 2. Preview and install the links
+The preview prints selected packages and mise tools. When `rcm` is already installed, it also prints every mapping and backup. On a fresh Mac, the installer cannot calculate that link map until the core package step installs `rcm`; it then pauses with the complete preview before changing your home directory. Dry-run changes nothing.
 
-[`rcm`](https://github.com/thoughtbot/rcm) maps repository names such as `zshrc` and `scripts/` to `~/.zshrc` and `~/.scripts/`.
+### 3. Apply
 
 ```sh
-brew install rcm
-RCRC="$PWD/rcrc" lsrc -d "$PWD"
-RCRC="$PWD/rcrc" rcup -d "$PWD" -v
+./install --profile rails
 ```
 
-Read the `lsrc` output and back up conflicting files before `rcup`. Do not use `rcup -f` on an existing home directory unless you deliberately want to replace conflicts.
+The installer asks before package changes and again before links. Existing conflicts and obsolete asdf-era runtime files move to:
 
-### 3. Choose your tools
-
-Minimal Rails/full-stack foundation:
-
-```sh
-brew install git mise overmind libpq ripgrep fzf shellcheck shfmt
+```text
+~/.dotfiles-backups/<UTC timestamp>/
 ```
 
-Complete curated setup:
+For automation, `--yes` skips prompts but still performs backups:
 
 ```sh
+./install --profile rails --yes
+```
+
+Open a new shell and verify:
+
+```sh
+exec zsh
+dotfiles doctor
+```
+
+Success ends with `doctor: healthy`. Optional local files may appear as warnings until you create them.
+
+## Choose a profile
+
+Profiles compose automatically. `rails` is the default and includes `core` and `frontend`; add `ai`, `docker`, or `extras` explicitly when needed.
+
+| Profile | Adds |
+| --- | --- |
+| `core` | Git, mise, rcm, shell tools, lint/format utilities, Gitleaks |
+| `rails` | Ruby, Node LTS, PostgreSQL client, ImageMagick, Overmind |
+| `frontend` | Node LTS and Caddy |
+| `ai` | Semgrep; shared agent skills are linked for every profile |
+| `docker` | Docker Desktop; opt in explicitly |
+| `extras` | media, network, backup, publishing, and selected desktop tools |
+
+Examples:
+
+```sh
+# Rails plus AI tooling and Docker
+./install --profile rails --profile ai --profile docker
+
+# Small shell/tool foundation
+./install --profile core
+
+# Refresh links only; install no packages
+./install --profile core --skip-packages
+
+# Install everything in the Brewfile after reviewing it
 brew bundle --file="$PWD/Brewfile"
 ```
 
-The complete bundle includes desktop applications, so review [`Brewfile`](Brewfile) before running it.
+Linux is supported for linking, tests, verification, and skills. The installer deliberately skips Homebrew provisioning there.
 
-### 4. Finish the shell setup
+## Rails workflow
 
-Prezto is optional; the Zsh configuration works without it.
+The shell stays concise and lets each Rails repository define its own commands.
 
-```sh
-git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
-mkdir -p "$HOME/.zprezto-contrib" "$HOME/.vim/backups" "$HOME/.vim/swaps" "$HOME/.vim/undo"
-exec zsh
-```
+| Command | Behavior |
+| --- | --- |
+| `be …` | `bundle exec …` |
+| `rt [path]` | use RSpec when `spec/` exists; otherwise `bin/rails test` |
+| `rci` | run the app's `bin/ci`; refuse when the app has no native CI entrypoint |
+| `rr` | search `rails routes` through `fzf` |
+| `fs` | start the Procfile with Overmind |
 
-`mise` activates automatically when installed. Pin project versions in each application's own `.tool-versions` or `mise.toml`; the versions here are workstation defaults.
+Runtime defaults are exact in [`mise.toml`](mise.toml). A Rails application's own `mise.toml` takes precedence, so existing projects keep their locked Ruby and Node versions.
 
-## Customize without editing tracked files
+The [`ruby-on-rails-dev`](agents/skills/ruby-on-rails-dev/) skill covers version-aware Rails 8/8.1 work, including:
 
-Put machine-specific settings, work aliases, and secrets in `~/.zshrc.local`:
+- conventional architecture and KISS boundaries
+- Active Record, controllers, Hotwire/Turbo/Stimulus, Active Job, and Action Cable
+- safe migrations, constraints, queries, caching, security, and performance
+- Propshaft, Solid Queue/Cache/Cable, Thruster, and optional Kamal deployment
+- focused tests plus repository-native `bin/ci` assurance
 
-```sh
-export GITHUB_USER="sajjadmurtaza"
-export WORKSPACE="$HOME/work"
-alias work='cd "$WORKSPACE"'
-```
+## Codex, Claude Code, and Cursor
 
-The repository's `zshrc` loads this file when it exists. Never commit API keys, tokens, private hostnames, or customer paths to this public repository.
-
-## AI agent skills
-
-Use the same reviewable engineering workflow in [Codex](https://developers.openai.com/codex/skills), [Claude Code](https://code.claude.com/docs/en/skills), and [Cursor](https://cursor.com/docs/skills). The skills guide an AI agent while it works on a repository; they are not Ruby gems, application dependencies, or production services.
-
-The source of truth is [`agents/skills/`](agents/skills/). The collection includes `dev`, `ruby-dev`, `ruby-on-rails-dev`, `typescript-dev`, `architecture`, `code-review`, `pull-request`, and supporting workflow skills.
-
-### Install once for all three agents
-
-Requires Node.js (`npx`) and GitHub access:
-
-```sh
-# See the available skills
-npx skills add sajjadmurtaza/dotfiles/agents/skills --list
-
-# Install all skills globally
-npx skills add sajjadmurtaza/dotfiles/agents/skills \
-  -g \
-  -a codex claude-code cursor \
-  -y
-
-# Verify the global installation
-npx skills list -g
-```
-
-Prefer a smaller Rails-focused set:
+The source of truth is [`agents/skills/`](agents/skills/). `rcm` links it to `~/.agents/skills`, and the same skills can be installed project-locally for all three agents.
 
 ```sh
 npx skills add sajjadmurtaza/dotfiles/agents/skills \
-  -g \
-  -a codex claude-code cursor \
+  -a codex -a claude-code -a cursor \
   --skill dev ruby-dev ruby-on-rails-dev code-review \
   -y
 ```
 
-For one project only, run the same command from that repository and omit `-g`.
-
-### Use a skill
-
-| Agent | Explicit invocation | Discover or verify |
+| Agent | Invoke | Discover |
 | --- | --- | --- |
-| Codex | Mention `$dev`, `$ruby-dev`, or `$ruby-on-rails-dev` | Run `/skills`; restart Codex if a new skill does not appear |
-| Claude Code | Run `/dev`, `/ruby-dev`, or `/ruby-on-rails-dev` | Run `/skills`; restart only when the top-level skills directory was created after the session started |
-| Cursor | Choose `/dev` or `/ruby-on-rails-dev` from the slash-command menu | Type `/` in Agent chat and find the skill |
+| Codex | `$dev`, `$ruby-on-rails-dev` | `/skills` or type `$` |
+| Claude Code | `/dev`, `/ruby-on-rails-dev` | `/skills` |
+| Cursor | choose `/dev` or `/ruby-on-rails-dev` | type `/` in Agent chat |
 
-The agents can also select a skill automatically when your request matches its description. Explicit invocation is useful when you want a predictable workflow.
-
-### Try the Rails workflow
-
-Paste this into Codex, Claude Code, or Cursor:
+Try this prompt:
 
 ```text
-Use the dev, ruby-dev, and ruby-on-rails-dev skills to add account suspension.
-Follow the existing Rails architecture, keep the change KISS, add regression tests,
-run the repository's native validation, and finish with the code-review skill.
+Use $dev, $ruby-dev, and $ruby-on-rails-dev to implement this Rails change.
+Follow the repository's conventions, keep the design KISS, add focused tests,
+run its native CI gate, and finish with $code-review.
 ```
 
-The intended path is:
+No tracked Claude setting enables `bypassPermissions`. Agent credentials and MCP connections remain local. See [the cross-agent guide](docs/ai-agents.md) and [skill catalog](agents/skills/README.md).
 
-```text
-request → dev → ruby-dev → ruby-on-rails-dev → code-review → pull-request
+## Customize locally
+
+Tracked configuration loads optional local files. Copy only the examples you need:
+
+```sh
+cp docs/examples/profile.local "$HOME/.profile.local"
+cp docs/examples/zshrc.local "$HOME/.zshrc.local"
+cp docs/examples/gitconfig.local "$HOME/.gitconfig.local"
+cp docs/examples/gitconfig.work "$HOME/.gitconfig.work"
 ```
 
-When this repository is installed through `rcm`, the skills are also linked into `~/.agents/skills/`, which Codex and Cursor read as a user-level skill location. The `npx skills` command above also creates the Claude Code links. See the [skill catalog and composition guide](agents/skills/README.md) for project-level installation, detailed routing, and the complete skill index.
+| File | Purpose |
+| --- | --- |
+| `~/.profile.local` | environment shared by login/interactive shells |
+| `~/.zshrc.local` | machine-specific aliases and interactive setup |
+| `~/.gitconfig.local` | personal Git name, email, signing |
+| `~/.gitconfig.work` | identity/settings for repositories under `~/work/company/` |
 
-## Useful commands
+Keep tokens, customer names, private hosts, and employer-only paths out of this public repository.
+
+Ruby and JavaScript linters belong in each project's `Gemfile` or `package.json`; this setup does not install mutable global copies. Run them through the repository's own `bin/ci`, Bundler, or package-manager scripts.
+
+## Daily commands
 
 | Command | Purpose |
 | --- | --- |
-| `RCRC="$PWD/rcrc" lsrc -d "$PWD"` | Preview source-to-home mappings with this repository's exclusions |
-| `RCRC="$PWD/rcrc" rcup -d "$PWD" -v` | Install or refresh reviewed links |
-| `brew bundle --file="$PWD/Brewfile"` | Install the complete tool collection |
-| `./scripts/macos-defaults-apply` | Interactively review and apply macOS preferences |
-| `./scripts/playground` | Find or create a development playground with fzf |
-| `./scripts/skill doctor` | Check the local agent-skill store for drift |
-| `make -C skill lint test` | Validate the skill-store CLI |
+| `dothelp` | show the compact command guide |
+| `dotfiles doctor` | inspect prerequisites, local overrides, Rails context, and link conflicts |
+| `dotfiles verify` | run syntax, profile, identity, skill-shape, ShellCheck, and Gitleaks checks when available |
+| `dotfiles benchmark [runs]` | report median interactive Zsh startup time |
+| `dotfiles update` | fetch, preview commits, fast-forward, then safely refresh links |
+| `skill doctor` | inspect canonical agent skills for local drift |
+| `clipcopy` / `clippaste` | portable macOS/Wayland/X11 clipboard pipes |
 
-## Safe backups
+Git helpers stay conservative. `gnew <branch>` preserves dirty work via a named stash and starts from the remote default branch; `gpf` uses `--force-with-lease`. Worktree creation and deletion remain explicit—see [the worktree guide](docs/git-worktrees.md).
 
-Backup scripts contain no personal servers or cloud destinations. They refuse to run without an explicit destination and default to a dry run.
+## macOS preferences and backups
 
-```sh
-# Preview an SSH music backup
-MUSIC_SSH_BACKUP_DESTINATION='user@backup-host:/path/to/music' \
-  ./scripts/backup-music-local
-
-# Preview an rclone music backup
-MUSIC_RCLONE_DESTINATION='my-remote:backups/music' \
-  ./scripts/backup-music-remote
-
-# Preview a system backup to a mounted external volume
-SYSTEM_BACKUP_DIR='/Volumes/MyBackup' ./scripts/backup-system
-```
-
-After reviewing the exact changes, add `BACKUP_APPLY=1` to perform the transfer. The scripts use synchronization with deletion, so the preview is an essential safety step.
-
-## macOS preferences
-
-Run the guided script and approve only the settings you want:
+macOS defaults are a separate, interactive action:
 
 ```sh
 ./scripts/macos-defaults-apply
 ```
 
-Settings such as Apple Watch unlock, trackpad gestures, accessibility colors, and the screenshot location remain manual in System Settings. Touch ID for `sudo` also requires a deliberate edit to `/etc/pam.d/sudo`; it is not changed automatically.
+Backup scripts require an explicit destination and default to a dry run. Example:
+
+```sh
+SYSTEM_BACKUP_DIR='/Volumes/MyBackup' ./scripts/backup-system
+```
+
+Add `BACKUP_APPLY=1` only after reviewing the exact synchronization output.
+
+## Develop and verify
+
+```sh
+make test
+make verify
+./scripts/dotfiles benchmark 5
+```
+
+CI runs ShellCheck, both Ruby test suites, isolated-home installer/idempotency tests, repository consistency checks, and secret scanning.
 
 ## Repository map
 
 ```text
-agents/skills/   reusable engineering and product agent skills
+agents/skills/   canonical cross-agent engineering skills
 config/          application configuration linked under ~/.config
-scripts/         command-line helpers linked as ~/.scripts
-skill/           Ruby CLI that manages the local skill store
-vim/             Vim runtime directories and plugins
-Brewfile         optional complete Homebrew bundle
-profile, zshrc   shared shell environment and interactive Zsh setup
-rcrc             rcm installation rules
+docs/            architecture, agent, security-adjacent, and usage guides
+lib/dotfiles.rb  safe setup/doctor/update implementation
+scripts/         linked command-line helpers
+skill/           separate Ruby CLI for skill-store maintenance
+test/            setup CLI and installer safety tests
+Brewfile         one profile-annotated package source
+mise.toml        exact workstation runtime defaults
+rcrc             rcm mapping exclusions and rules
 ```
 
-## Updating
-
-```sh
-cd "$HOME/work/dotfiles"
-git pull --ff-only
-RCRC="$PWD/rcrc" lsrc -d "$PWD"
-RCRC="$PWD/rcrc" rcup -d "$PWD" -v
-```
-
-Topgrade may update installed tools, but repository pulls and `rcup` remain manual so configuration changes are always reviewed first.
+The design and extension rules are in [docs/architecture.md](docs/architecture.md).
 
 ## Privacy and safety
 
-- No telemetry, remote reporting, or owner-controlled runtime service is configured by these dotfiles.
-- A Git remote is only used when you explicitly run Git commands; it does not grant the repository owner access to your machine.
-- Backup destinations are supplied at runtime and are never embedded in the repository.
-- macOS changes, package installation, repository updates, and home-directory links require explicit commands.
-- As with any public dotfiles repository, read scripts and diffs before running them and keep local secrets outside version control.
+- There is no telemetry, owner-controlled service, or remote reporting.
+- A Git remote cannot access your machine; it transfers repository data only when you run Git.
+- `--yes` never disables conflict backups.
+- Package installation, macOS defaults, repository updates, and backup transfers require explicit commands.
+- Run `./install --dry-run` and review diffs before applying updates from any public dotfiles repository.
 
-## Use responsibly
+See [SECURITY.md](SECURITY.md) for the trust model and private reporting path.
 
-Review every system-level command for your own machine and environment. This repository does not currently declare an open-source license.
+This repository does not declare an open-source license. Public visibility allows review, but reuse rights remain reserved unless the owner adds a license deliberately.

@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+root = File.expand_path("..", File.dirname(File.realpath(__FILE__)))
+require File.join(root, "lib", "dotfiles")
+
+exit Dotfiles::CLI.run(ARGV)

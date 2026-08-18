@@ -1,2 +1,2 @@
-EXCLUDES="README.md CONTEXT.md"
+EXCLUDES="README.md CONTEXT.md Makefile SECURITY.md docs install lib skill test"
 UNDOTTED="Library"

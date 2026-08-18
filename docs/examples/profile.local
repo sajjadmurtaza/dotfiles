@@ -1,0 +1,2 @@
+# Environment shared by login and interactive shells.
+export WORKSPACE="$HOME/work"

@@ -1,0 +1,22 @@
+[core]
+	excludesfile = ~/.gitignore
+[commit]
+	template = ~/.gitmessage
+[diff]
+	algorithm = histogram
+[fetch]
+	prune = true
+[include]
+	path = ~/.gitconfig.local
+[includeIf "gitdir:~/work/company/"]
+	path = ~/.gitconfig.work
+[init]
+	defaultBranch = main
+[pull]
+	rebase = true
+[push]
+	autoSetupRemote = true
+[rebase]
+	autoStash = true
+[rerere]
+	enabled = true

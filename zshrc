@@ -1,8 +1,4 @@
 #region functions
-function command_exists {
-  type "$1" >/dev/null 2>&1
-}
-
 fzf_git_switch() {
   if [ $# -eq 0 ]; then
     local ref
@@ -47,7 +43,7 @@ FPATH="$HOME/.completions:$FPATH"
 source ~/.profile
 
 # Activate the version manager only when it is installed. Project-local
-# .tool-versions and mise.toml files remain the source of truth.
+# mise.toml files override the workstation defaults in ~/.mise.toml.
 if command_exists mise; then
   eval "$(mise activate zsh)"
 fi
@@ -136,7 +132,11 @@ lag() {
 
 # git_default_branch: get the default branch of the current git repository (assumes remote is named 'origin')
 function git_default_branch() {
-  git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
+  git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@' && return
+  git show-ref --verify --quiet refs/heads/main && echo main && return
+  git show-ref --verify --quiet refs/heads/master && echo master && return
+  echo "git_default_branch: no origin HEAD, main, or master branch" >&2
+  return 1
 }
 
 gnew() {
@@ -185,22 +185,53 @@ alias git-staged="git diff --name-only --cached"
 
 #endregion
 
-#region# ruby & rails, node aliases
-
-function rubocop_update() {
-  bundle update $(rg -o "rubocop[\w-]*" Gemfile | tr '\n' ' ')
-}
-
+#region# ruby & rails aliases
 alias be='bundle exec'
 alias berd='RAILS_ENV=${RAILS_ENV:-test} bundle exec rspec --format documentation'
 alias ber='RAILS_ENV=${RAILS_ENV:-test} bundle exec rspec'
-alias rdbm='bundle exec rake db:migrate'
-alias rdbr='bundle exec rake db:rollback'
 alias fs='overmind start'
-alias rr='bundle exec rails routes | fzf'
-alias rubocop-global="rubocop --require rubocop-rails --require rubocop-rspec --require rubocop-performance --require test_prof/rubocop --require rubocop-thread_safety -c .rubocop.yml"
-alias rubocop-update="rubocop_update"
-alias yarn-upgrade='npx npm-check-updates -u && yarn install && npx yarn-deduplicate yarn.lock && yarn install'
+
+rails_project() {
+  [[ -f config/application.rb && -x bin/rails ]]
+}
+
+rdbm() {
+  rails_project || { echo "rdbm: run inside a Rails application" >&2; return 1; }
+  bin/rails db:migrate "$@"
+}
+
+rdbr() {
+  rails_project || { echo "rdbr: run inside a Rails application" >&2; return 1; }
+  bin/rails db:rollback "$@"
+}
+
+rr() {
+  rails_project || { echo "rr: run inside a Rails application" >&2; return 1; }
+  bin/rails routes | fzf
+}
+
+rt() {
+  if ! rails_project; then
+    echo "rt: run inside a Rails application" >&2
+    return 1
+  elif [[ -d spec ]]; then
+    bundle exec rspec "$@"
+  else
+    bin/rails test "$@"
+  fi
+}
+
+rci() {
+  if ! rails_project; then
+    echo "rci: run inside a Rails application" >&2
+    return 1
+  elif [[ -x bin/ci ]]; then
+    bin/ci "$@"
+  else
+    echo "rci: this app has no bin/ci; use its documented test and lint commands" >&2
+    return 1
+  fi
+}
 #endregion
 
 #region# start GUI applications
@@ -223,6 +254,7 @@ alias .....="cd ../../../.."
 
 #region# magic folder commands
 alias pg="playground"
+alias dothelp="dotfiles help"
 #endregion
 
 #region# better cat and "imagec" (icat)
@@ -249,6 +281,32 @@ if [ "$(uname)" = "Darwin" ]; then
   # we are on macosx
   alias lsusb="system_profiler SPUSBDataType"
 fi
+
+clipcopy() {
+  if command_exists pbcopy; then
+    pbcopy
+  elif command_exists wl-copy; then
+    wl-copy
+  elif command_exists xclip; then
+    xclip -selection clipboard
+  else
+    echo "clipcopy: install pbcopy, wl-clipboard, or xclip" >&2
+    return 1
+  fi
+}
+
+clippaste() {
+  if command_exists pbpaste; then
+    pbpaste
+  elif command_exists wl-paste; then
+    wl-paste --no-newline
+  elif command_exists xclip; then
+    xclip -selection clipboard -o
+  else
+    echo "clippaste: install pbpaste, wl-clipboard, or xclip" >&2
+    return 1
+  fi
+}
 
 if command_exists lazydocker; then
   alias lad="lazydocker"

@@ -48,11 +48,14 @@ export EDITOR=vim
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_NO_AUTO_UPDATE=1
 
-# ruby
-export DISABLE_SPRING=1
-
 # fzf
 export FZF_DEFAULT_COMMAND='rg --files --ignore-case'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_DEFAULT_OPTS='--cycle'
 #: }}}
+
+# Optional machine-local environment. Keep secrets and employer-specific paths
+# out of this public repository.
+if [ -f "$HOME/.profile.local" ]; then
+  . "$HOME/.profile.local"
+fi
