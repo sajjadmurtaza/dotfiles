@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "open3"
 require "stringio"
 require "tmpdir"
 
@@ -55,6 +56,21 @@ class BrewfileTest < Minitest::Test
       entries = Dotfiles::Brewfile.new(path).entries(Dotfiles::Profiles.new(["core"]))
 
       assert_equal(["brew \"git\"\n"], entries)
+    end
+  end
+end
+
+class ShellStartupTest < Minitest::Test
+  def test_zshrc_can_use_profile_helpers_during_startup
+    Dir.mktmpdir do |home|
+      root = File.expand_path("..", __dir__)
+      File.symlink(File.join(root, "profile"), File.join(home, ".profile"))
+      File.symlink(File.join(root, "zshrc"), File.join(home, ".zshrc"))
+
+      output, status = Open3.capture2e({ "HOME" => home }, "zsh", "-dfc", "source ~/.zshrc")
+
+      assert_predicate(status, :success?)
+      refute_match(/command not found: command_exists/, output)
     end
   end
 end

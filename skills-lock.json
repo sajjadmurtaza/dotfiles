@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "code-review": {
+      "source": "sajjadmurtaza/dotfiles",
+      "sourceType": "github",
+      "skillPath": "agents/skills/code-review/SKILL.md",
+      "computedHash": "71edd363333b6be822d5d5a3e4c00b3c8592a5caf4e496e50d0b5699d6c5a709"
+    },
+    "dev": {
+      "source": "sajjadmurtaza/dotfiles",
+      "sourceType": "github",
+      "skillPath": "agents/skills/dev/SKILL.md",
+      "computedHash": "b0cb6d7d0a0993709669f9c8f8a0fb354db326b7403f13f9b983653197021223"
+    },
+    "ruby-dev": {
+      "source": "sajjadmurtaza/dotfiles",
+      "sourceType": "github",
+      "skillPath": "agents/skills/ruby-dev/SKILL.md",
+      "computedHash": "af366349cd02d3acd5747033cf45b493d7452ca1ba78f376e4e2587c325bd0e0"
+    },
+    "ruby-on-rails-dev": {
+      "source": "sajjadmurtaza/dotfiles",
+      "sourceType": "github",
+      "skillPath": "agents/skills/ruby-on-rails-dev/SKILL.md",
+      "computedHash": "885a52043cf5098becdf4b7e238ec7f1d84ebb54b32504c10e499a9f8b63546b"
+    }
+  }
+}

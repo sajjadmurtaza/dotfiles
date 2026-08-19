@@ -22,6 +22,9 @@ fzf_git_switch() {
 }
 #endregion
 
+# Load shared helpers and environment before using command_exists below.
+source ~/.profile
+
 #region homebrew provided stuff: zsh completions, libs
 if command_exists brew; then
   brew_prefix="$(brew --prefix)"
@@ -39,8 +42,6 @@ FPATH="$HOME/.completions:$FPATH"
 #endregion
 
 #region shell setup with sourcing and evals
-
-source ~/.profile
 
 # Activate the version manager only when it is installed. Project-local
 # mise.toml files override the workstation defaults in ~/.mise.toml.
@@ -96,11 +97,6 @@ brew-remove() {
 }
 
 #endregion
-
-# source ~/.zshrc.local
-if [ -f "$HOME/.zshrc.local" ]; then
-  source "$HOME/.zshrc.local"
-fi
 
 #endregion
 
@@ -358,3 +354,9 @@ bindkey "^[^[[D" backward-word
 
 #region Completions
 autoload -U compinit && compinit
+
+# Load machine-specific overrides last so they can intentionally take
+# precedence over the managed aliases, functions, and prompt setup.
+if [ -f "$HOME/.zshrc.local" ]; then
+  source "$HOME/.zshrc.local"
+fi
