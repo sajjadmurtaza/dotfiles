@@ -73,6 +73,78 @@ class ShellStartupTest < Minitest::Test
       refute_match(/command not found: command_exists/, output)
     end
   end
+
+  def test_zshrc_loads_existing_oh_my_zsh_with_pre_and_post_overrides
+    Dir.mktmpdir do |home|
+      root = File.expand_path("..", __dir__)
+      File.symlink(File.join(root, "profile"), File.join(home, ".profile"))
+      File.symlink(File.join(root, "zshrc"), File.join(home, ".zshrc"))
+      FileUtils.mkdir_p(File.join(home, ".oh-my-zsh"))
+      File.write(File.join(home, ".oh-my-zsh", "oh-my-zsh.sh"), "export OH_MY_ZSH_LOADED=yes\n")
+      File.write(File.join(home, ".zshrc.pre.local"), "ZSH_THEME=agnoster\nplugins=(git docker)\n")
+      File.write(File.join(home, ".zshrc.local"), "export POST_OVERRIDE_LOADED=yes\n")
+
+      command = "source ~/.zshrc; print -r -- $OH_MY_ZSH_LOADED:$ZSH_THEME:${(j:,:)plugins}:$POST_OVERRIDE_LOADED"
+      output, status = Open3.capture2e({ "HOME" => home }, "zsh", "-dfc", command)
+
+      assert_predicate(status, :success?)
+      assert_includes(output, "yes:agnoster:git,docker:yes")
+    end
+  end
+end
+
+class VerifierTest < Minitest::Test
+  def test_rejects_tracked_personal_identity
+    Dir.mktmpdir do |dir|
+      prepare_verifier_root(dir)
+      File.write(File.join(dir, "README.md"), "Maintained by #{["Saj", "jad"].join}\n")
+      output = StringIO.new
+
+      status = Dotfiles::Verifier.new(root: dir, shell: FakeShell.new, output: output).run
+
+      assert_equal(1, status)
+      assert_includes(output.string, "tracked personalization remains: README.md")
+    end
+  end
+
+  def test_rejects_absolute_user_path_in_symlink
+    Dir.mktmpdir do |dir|
+      prepare_verifier_root(dir)
+      File.symlink(File.join("/", "Users", "local-user", "theme.vim"), File.join(dir, "theme.vim"))
+      output = StringIO.new
+
+      status = Dotfiles::Verifier.new(root: dir, shell: FakeShell.new, output: output).run
+
+      assert_equal(1, status)
+      assert_includes(output.string, "tracked personalization remains: theme.vim")
+    end
+  end
+
+  def test_rejects_identity_in_tracked_gitconfig
+    Dir.mktmpdir do |dir|
+      prepare_verifier_root(dir)
+      File.write(File.join(dir, "gitconfig"), "[user]\n  name = Your Name\n  email = you@example.com\n")
+      output = StringIO.new
+
+      status = Dotfiles::Verifier.new(root: dir, shell: FakeShell.new, output: output).run
+
+      assert_equal(1, status)
+      assert_includes(output.string, "gitconfig contains a tracked user identity")
+    end
+  end
+
+  private
+
+  def prepare_verifier_root(dir)
+    brewfile = Dotfiles::Profiles::NAMES.each_with_index.map do |profile, index|
+      "# profile: #{profile}\nbrew \"fixture-#{index}\"\n"
+    end.join
+    File.write(File.join(dir, "Brewfile"), brewfile)
+    File.write(File.join(dir, "mise.toml"), "[tools]\nruby = \"3.4.4\"\n")
+    File.write(File.join(dir, "README.md"), "")
+    File.write(File.join(dir, "SECURITY.md"), "")
+    File.write(File.join(dir, "gitconfig"), "")
+  end
 end
 
 class LinkPlanTest < Minitest::Test
@@ -128,7 +200,7 @@ class InstallerTest < Minitest::Test
     assert_includes(output.string, "Mode: dry run")
   end
 
-  def test_yes_still_backs_up_conflicts_before_rcup
+  def test_explicit_replace_conflicts_still_backs_up_before_rcup
     Dir.mktmpdir do |dir|
       root = File.join(dir, "repo")
       home = File.join(dir, "home")
@@ -144,13 +216,62 @@ class InstallerTest < Minitest::Test
 
       Dotfiles::Installer.new(root: root, home: home, profiles: Dotfiles::Profiles.new(["core"]),
                               shell: shell, dry_run: false, yes: true, skip_packages: true,
-                              output: StringIO.new).run
+                              replace_conflicts: true, output: StringIO.new).run
 
       refute(File.exist?(conflict))
       assert_equal("personal\n", File.read(File.join(home, ".dotfiles-backups", "test", ".zshrc")))
       assert_equal("rcup", shell.runs.last[0].first)
     ensure
       ENV.delete("DOTFILES_TIMESTAMP")
+    end
+  end
+
+  def test_yes_refuses_to_replace_existing_home_files_without_explicit_flag
+    Dir.mktmpdir do |dir|
+      root = File.join(dir, "repo")
+      home = File.join(dir, "home")
+      FileUtils.mkdir_p([root, home])
+      File.write(File.join(root, "rcrc"), "")
+      existing = File.join(home, ".gitconfig")
+      source = File.join(root, "gitconfig")
+      File.write(existing, "[user]\n  name = Existing User\n")
+      File.write(source, "[include]\n  path = ~/.gitconfig.local\n")
+      shell = FakeShell.new(commands: %w[lsrc rcup], captures: { "lsrc -d #{root}" => "#{existing}:#{source}\n" })
+      output = StringIO.new
+
+      error = assert_raises(Dotfiles::Error) do
+        Dotfiles::Installer.new(root: root, home: home, profiles: Dotfiles::Profiles.new(["core"]),
+                                shell: shell, dry_run: false, yes: true, skip_packages: true,
+                                output: output).run
+      end
+
+      assert_match(/--replace-conflicts/, error.message)
+      assert_equal("[user]\n  name = Existing User\n", File.read(existing))
+      assert_empty(shell.runs)
+      assert_includes(output.string, "move Git identity and signing settings")
+    end
+  end
+
+  def test_interactive_install_requires_replace_word_for_conflicts
+    Dir.mktmpdir do |dir|
+      root = File.join(dir, "repo")
+      home = File.join(dir, "home")
+      FileUtils.mkdir_p([root, home])
+      File.write(File.join(root, "rcrc"), "")
+      existing = File.join(home, ".zshrc")
+      source = File.join(root, "zshrc")
+      File.write(existing, "plugins=(git docker)\n")
+      File.write(source, "managed\n")
+      shell = FakeShell.new(commands: %w[lsrc rcup], captures: { "lsrc -d #{root}" => "#{existing}:#{source}\n" })
+      output = StringIO.new
+
+      Dotfiles::Installer.new(root: root, home: home, profiles: Dotfiles::Profiles.new(["core"]),
+                              shell: shell, dry_run: false, yes: false, skip_packages: true,
+                              input: StringIO.new("y\nreplace\n"), output: output).run
+
+      refute(File.exist?(existing))
+      assert_equal("rcup", shell.runs.last[0].first)
+      assert_includes(output.string, "move Oh My Zsh theme/plugins to ~/.zshrc.pre.local")
     end
   end
 
@@ -167,7 +288,7 @@ class InstallerTest < Minitest::Test
 
       Dotfiles::Installer.new(root: root, home: home, profiles: Dotfiles::Profiles.new(["core"]),
                               shell: shell, dry_run: false, yes: true, skip_packages: true,
-                              output: StringIO.new).run
+                              replace_conflicts: true, output: StringIO.new).run
 
       refute(File.exist?(File.join(home, ".tool-versions")))
       assert_equal("ruby 3.4.9\n", File.read(File.join(home, ".dotfiles-backups", "legacy", ".tool-versions")))
@@ -189,7 +310,7 @@ class InstallerTest < Minitest::Test
 
       Dotfiles::Installer.new(root: root, home: home, profiles: Dotfiles::Profiles.new(["core"]),
                               shell: shell, dry_run: false, yes: true, skip_packages: true,
-                              output: StringIO.new).run
+                              replace_conflicts: true, output: StringIO.new).run
 
       refute(File.exist?(obsolete))
       stored = File.join(home, ".dotfiles-backups", "skill-migration", ".agents", "skills",
@@ -216,7 +337,7 @@ class InstallerTest < Minitest::Test
       assert_raises(Dotfiles::Error) do
         Dotfiles::Installer.new(root: root, home: home, profiles: Dotfiles::Profiles.new(["core"]),
                                 shell: shell, dry_run: false, yes: true, skip_packages: true,
-                                output: StringIO.new).run
+                                replace_conflicts: true, output: StringIO.new).run
       end
 
       assert_equal("personal\n", File.read(conflict))
@@ -236,7 +357,7 @@ class InstallerTest < Minitest::Test
 
       Dotfiles::Installer.new(root: root, home: home, profiles: Dotfiles::Profiles.new(["core"]),
                               shell: shell, dry_run: false, yes: true, skip_packages: true,
-                              output: StringIO.new).run
+                              replace_conflicts: true, output: StringIO.new).run
 
       assert_equal("ruby 3.4.9\n", File.read(File.join(home, ".dotfiles-backups", "same-1", ".tool-versions")))
     ensure

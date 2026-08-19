@@ -1,4 +1,8 @@
 #region functions
+command_exists() {
+  type "$1" >/dev/null 2>&1
+}
+
 fzf_git_switch() {
   if [ $# -eq 0 ]; then
     local ref
@@ -49,8 +53,21 @@ if command_exists mise; then
   eval "$(mise activate zsh)"
 fi
 
-# Source Prezto.
-if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+# Load framework settings before Oh My Zsh/Prezto. Use this for ZSH_THEME,
+# plugins, and other values the framework reads during startup.
+if [ -f "$HOME/.zshrc.pre.local" ]; then
+  source "$HOME/.zshrc.pre.local"
+fi
+
+# Prefer Oh My Zsh when it is installed, with Prezto as a fallback.
+if [[ -s "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]]; then
+  export ZSH="$HOME/.oh-my-zsh"
+  ZSH_THEME="${ZSH_THEME:-robbyrussell}"
+  if (( ! ${+plugins} )); then
+    plugins=(git)
+  fi
+  source "$ZSH/oh-my-zsh.sh"
+elif [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
@@ -102,7 +119,8 @@ brew-remove() {
 
 #region aliases
 
-#region# git related (some found in @holman's dotfiles)
+#region# git helpers
+unalias glog 2>/dev/null
 glog() {
   git log --abbrev-commit --date=short --decorate=short --decorate-refs='refs/heads/*' --decorate-refs='refs/tags/*' --pretty=format:'%C(red)%h%Creset %C(bold blue)%an%Creset: %s %C(yellow)%d%Creset %C(green)(%ad)%Creset'
 }
@@ -354,6 +372,8 @@ bindkey "^[^[[D" backward-word
 
 #region Completions
 autoload -U compinit && compinit
+
+export GPG_TTY="$(tty)"
 
 # Load machine-specific overrides last so they can intentionally take
 # precedence over the managed aliases, functions, and prompt setup.

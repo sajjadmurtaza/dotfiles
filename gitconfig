@@ -20,6 +20,3 @@
 	autoStash = true
 [rerere]
 	enabled = true
-[user]
-	name = Sajjad Murtaza
-	email = sajjadmurtaza.nxb@gmail.com

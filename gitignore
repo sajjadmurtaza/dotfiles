@@ -57,3 +57,4 @@ Thumbs.db
 .byebug_history
 .yardoc/
 
+**/.claude/settings.local.json

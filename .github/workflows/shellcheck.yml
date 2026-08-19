@@ -64,7 +64,19 @@ jobs:
           HOME="$test_home" ruby ./install --profile core --skip-packages --yes
           test -L "$test_home/.zshrc"
           test -L "$test_home/.gitconfig"
-          test -L "$test_home/.agents/skills/ruby-on-rails-dev/SKILL.md"
+          test ! -e "$test_home/.agents/skills/ruby-on-rails-dev/SKILL.md"
+      - name: Refuse non-interactive replacement of existing configuration
+        shell: bash
+        run: |
+          test_home="$(mktemp -d)"
+          printf '%s\n' 'plugins=(git docker)' > "$test_home/.zshrc"
+          printf '%s\n' '[user]' '  name = Existing User' > "$test_home/.gitconfig"
+          if HOME="$test_home" ruby ./install --profile core --skip-packages --yes; then
+            echo "installer unexpectedly replaced existing configuration" >&2
+            exit 1
+          fi
+          grep -q 'plugins=(git docker)' "$test_home/.zshrc"
+          grep -q 'name = Existing User' "$test_home/.gitconfig"
 
   secrets:
     name: Secret scan

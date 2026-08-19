@@ -6,40 +6,68 @@ This is a portable skill store for product and engineering work: domain routers 
 
 ## Install
 
-### Global: available in every project
+### Global — recommended for personal use
 
 ```sh
-npx skills add sajjadmurtaza/dotfiles/agents/skills \
+npx skills add ./agents/skills \
   -g \
-  -a codex claude-code cursor \
+  --copy \
+  -a codex -a claude-code -a cursor \
+  --skill dev ruby-dev ruby-on-rails-dev code-review pull-request \
   -y
 ```
 
-Requires Node.js (`npx`) and GitHub access to `sajjadmurtaza/dotfiles`.
+Run this from the dotfiles repository root. It installs the core workflow once for every repository and requires Node.js (`npx`). Open a new agent task/session after installation.
 
 ```sh
 npx skills list -g
 ```
 
-### Project: available only in one repository
+> [!IMPORTANT]
+> Install globally once per machine. The same installation is available from every repository.
 
-Run from the target repository and omit `-g`:
+### Update global skills
 
 ```sh
-npx skills add sajjadmurtaza/dotfiles/agents/skills \
-  -a codex claude-code cursor \
-  --skill dev ruby-dev ruby-on-rails-dev code-review \
+npx skills update -g -y
+npx skills list -g
+```
+
+To update only part of the workflow:
+
+```sh
+npx skills update code-review dev ruby-dev ruby-on-rails-dev pull-request -g -y
+```
+
+> [!TIP]
+> Open a new agent task/session after updating. For unpushed local store edits, rerun the global install command above from the dotfiles repository root; the update command follows the recorded published source.
+
+### Project-local — optional and repository-specific
+
+Run from the target repository, set the source to the published dotfiles repository, and omit `-g`:
+
+```sh
+DOTFILES_SKILLS_SOURCE="https://github.com/your-account/dotfiles/tree/main/agents/skills"
+npx skills add "$DOTFILES_SKILLS_SOURCE" \
+  --copy \
+  -a codex -a claude-code -a cursor \
+  --skill dev ruby-dev ruby-on-rails-dev code-review pull-request \
   -y
 ```
 
+Commit the generated agent files only when the team agrees to maintain them in that repository. A personal global installation does not need to be repeated per repository.
+
+> [!WARNING]
+> Project-local copies are repository-owned dependencies. Add them only when the team has agreed to review and update them.
+
 | Intent | Command |
 | --- | --- |
-| Browse | `npx skills add sajjadmurtaza/dotfiles/agents/skills --list` |
+| Browse | `npx skills add ./agents/skills --list` from the dotfiles repository root |
 | Project-level | Run the add command from the target repository without `-g` |
 | Specific skills | Add `--skill <name ...>`, such as `--skill code-review docs` |
-| This machine (`rcm`) | Manual `RCRC=<dotfiles-directory>/rcrc rcup -d <dotfiles-directory>` → `~/.agents/skills/<name>/` — [Operate the store](#operate-the-store) |
+| This machine | Use the global command above → `~/.agents/skills/<name>/` |
 
-Equivalent sources: `sajjadmurtaza/dotfiles`, the GitHub URL, or `…/tree/main/agents/skills`. CLI: [vercel-labs/skills](https://github.com/vercel-labs/skills).
+The Skills CLI accepts a local skill-store path or a GitHub repository path ending in `agents/skills`. CLI: [vercel-labs/skills](https://github.com/vercel-labs/skills).
 
 ## Use
 
@@ -159,9 +187,7 @@ Router shape: `## Pick branch` → `## Shared prep` → `## Branch reference` �
 
 ## Operate the store
 
-Dotfiles + `rcm` on this machine. Everyone else: [Install](#install).
-
-Git-tracked trees under `agents/skills/<name>/` are the source of truth. `RCRC=<dotfiles-directory>/rcrc rcup -d <dotfiles-directory>` installs them into `~/.agents/skills/<name>/` (file-level links). Keep `SYMLINK_DIRS` unset for `agents` / `agents/skills` so `~/.agents/skills` can hold both `rcup` links and third-party dirs from `npx skills`. After clone/pull, promote/rename, or `backfill`, preview with the same command using `lsrc`, then run `rcup` manually.
+Git-tracked trees under `agents/skills/<name>/` are the source of truth. Install published skills with the global command above. During local skill development, run the same command against `./agents/skills` from the dotfiles checkout, review the installed result, and open a new agent task/session.
 
 **CONTEXT:** vocabulary SoT lives at store root [`CONTEXT.md`](CONTEXT.md) (`<dotfiles-directory>/agents/skills/CONTEXT.md`). Skills cite `../CONTEXT.md` relative to the store tree; that path is not installed under `~/.agents/skills/<name>/`. When working outside the dotfiles workspace, read CONTEXT from the store root (or open this repo) — do not copy it into each skill.
 
@@ -172,12 +198,12 @@ Git-tracked trees under `agents/skills/<name>/` are the source of truth. `RCRC=<
 | `skill backfill <name>`    | Copy drifted real files from `~/.agents/skills/<name>` into the store |
 | `skill promote <name>`     | Move `<project>/.agents/skills/<name>` into the store                 |
 | `skill rename <old> <new>` | Rename in the store                                                   |
-| `RCRC=<dotfiles-directory>/rcrc rcup -d <dotfiles-directory>` | Install store skills into `~/.agents/skills` |
+| `npx skills add ./agents/skills -g --copy -a codex -a claude-code -a cursor -y` | Install the local store globally |
 
-When `skill doctor` reports `drift`, run `skill backfill <name>`, then `rcup`.
+When `skill doctor` reports `drift`, decide which side is authoritative before backfilling or reinstalling; never overwrite reviewed changes blindly.
 
 | Scope         | Path                                             |
 | ------------- | ------------------------------------------------ |
 | Store         | `agents/skills/<name>/` in this repo             |
-| Agent install | `~/.agents/skills/<name>/` via `rcup`            |
+| Agent install | `~/.agents/skills/<name>/` via the Skills CLI    |
 | Project draft | `<repo>/.agents/skills/<name>/` (promote source) |

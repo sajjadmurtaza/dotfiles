@@ -17,7 +17,6 @@ command_exists() {
 
 ##
 # source: https://stackoverflow.com/a/30029855/17449024
-# thank you, Michal!
 listening() {
     if [ $# -eq 0 ]; then
         sudo lsof -iTCP -sTCP:LISTEN -n -P
@@ -31,6 +30,11 @@ listening() {
 #: }}}
 
 #: PATH extensions {{{
+# make Apple Silicon Homebrew commands available in login shells
+if [ -d /opt/homebrew/bin ]; then
+  export PATH="/opt/homebrew/bin:$PATH"
+fi
+
 # use the dotfiles' scripts
 export PATH="$HOME/.scripts:$PATH"
 
@@ -39,6 +43,9 @@ export PATH="/usr/local/sbin:$PATH"
 
 # make cargo bin available
 export PATH="$HOME/.cargo/bin:$PATH"
+
+# Prefer user-installed command-line tools over package-manager versions.
+export PATH="$HOME/.local/bin:$PATH"
 #: }}}
 
 #: exports {{{

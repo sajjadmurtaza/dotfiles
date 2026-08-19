@@ -15,7 +15,8 @@ module Dotfiles
       .agents/skills/ruby-on-rails-dev/reference.md
     ].freeze
 
-    def initialize(root:, home:, profiles:, shell:, dry_run:, yes:, skip_packages:, input: $stdin, output: $stdout)
+    def initialize(root:, home:, profiles:, shell:, dry_run:, yes:, skip_packages:, replace_conflicts: false,
+                   input: $stdin, output: $stdout)
       @root = root
       @home = home
       @profiles = profiles
@@ -23,6 +24,7 @@ module Dotfiles
       @dry_run = dry_run
       @yes = yes
       @skip_packages = skip_packages
+      @replace_conflicts = replace_conflicts
       @input = input
       @output = output
     end
@@ -108,7 +110,8 @@ module Dotfiles
       mappings.each { |mapping| @output.puts("  #{mapping.destination} <- #{mapping.source}") }
       @output.puts("\n#{conflicts.length} conflict(s) will be moved to a timestamped backup.") unless conflicts.empty?
       @output.puts("#{obsolete.length} obsolete managed file(s) will be retired into the same backup.") unless obsolete.empty?
-      confirm!("Back up conflicts and apply these links?") unless @yes
+      authorize_existing_file_changes!(conflicts, obsolete) unless conflicts.empty? && obsolete.empty?
+      confirm!("Apply these links?") if conflicts.empty? && obsolete.empty? && !@yes
 
       backups = backup(conflicts + obsolete)
       @shell.run("rcup", "-d", @root, "-v", "-i", env: { "HOME" => @home, "RCRC" => File.join(@root, "rcrc") })
@@ -190,6 +193,33 @@ module Dotfiles
         suffix += 1
       end
       candidate
+    end
+
+    def authorize_existing_file_changes!(conflicts, obsolete)
+      @output.puts("\nWARNING: these existing home files will stop being active:")
+      conflicts.each do |mapping|
+        note = conflict_note(mapping.destination)
+        @output.puts("  replace #{mapping.destination}#{note ? " — #{note}" : ""}")
+      end
+      obsolete.each { |mapping| @output.puts("  retire  #{mapping.destination}") }
+      @output.puts("Their original contents will remain in ~/.dotfiles-backups/.")
+      @output.puts("Cancel and move settings you want to keep into the documented *.local override files before retrying.")
+      return if @replace_conflicts
+
+      if @yes
+        raise Error, "existing home files were not changed; review the preview, then rerun with --replace-conflicts"
+      end
+
+      @output.print("Type 'replace' to back up and replace these files: ")
+      answer = @input.gets
+      raise Error, "existing home files were not changed" unless answer&.strip == "replace"
+    end
+
+    def conflict_note(path)
+      case File.basename(path)
+      when ".zshrc" then "move Oh My Zsh theme/plugins to ~/.zshrc.pre.local and aliases to ~/.zshrc.local"
+      when ".gitconfig" then "move Git identity and signing settings to ~/.gitconfig.local or ~/.gitconfig.work"
+      end
     end
 
     def obsolete_files

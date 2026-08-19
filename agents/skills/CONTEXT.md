@@ -211,14 +211,14 @@ Signal that selects `architecture` **`deep-modules`** — not a skill name.
 _Avoid_: deepen-modules skill
 
 **Harvest**:
-Build: pain-twice or user-asked only — `$dev` → routed `{lang}-dev` `reference.md` (or `architecture/reference/growth.md` for craft). Architecture: `architecture/reference/growth.md` + `learning-log.md` → sparse-promote into craft refs. Assure: `code-review/reference/growth.md` + `learning-log.md` → lens refs. After store edits: `skill doctor`; on drift → `skill backfill <name>` → `rcup`.
+Build: pain-twice or user-asked only — `$dev` → routed `{lang}-dev` `reference.md` (or `architecture/reference/growth.md` for craft). Architecture: `architecture/reference/growth.md` + `learning-log.md` → sparse-promote into craft refs. Assure: `code-review/reference/growth.md` + `learning-log.md` → lens refs. After store edits, reinstall `./agents/skills` globally with the Skills CLI and open a new agent task/session.
 _Avoid_: harvest on every `$dev` implement completion; append-only forever doctrine in the log; growing frozen router checklists for every lesson; loading growth.md on every craft/review session; inventing a parallel runtime route registry outside `dev/SKILL.md`; inventing `$dev` harvest theater
 
 **Expansion law**:
 Seven rules in `architecture/reference/growth.md` before adding a branch. Prefer sparse harvest over new branches; never invent a top-level craft skill when a `refactor-<concern>` branch fits. New language packs / overlays are a **router contract edit** on frozen `dev/SKILL.md` (plus README/CONTEXT index) — not a progressive `reference/runtimes.md`.
 
 **Install** (this store via [`npx skills`](https://github.com/vercel-labs/skills)):
-Published skills: `npx skills add sajjadmurtaza/dotfiles/agents/skills` (browse with `--list`). This machine with `rcm`: `rcup` → `~/.agents/skills/`. Details: `agents/skills/README.md` Install.
+From the dotfiles repository root: `npx skills add ./agents/skills -g --copy` (browse with `--list`). The Skills CLI installs user-level agent directories independently from `rcm`. Details: `agents/skills/README.md` Install.
 
 **Third-party packs**:
 Optional agent installs (`grilling`, `swift-*`, vendor React packs, and compatible Rust depth packs). Not first-party kinds; not OS source of truth. Install with a separate `npx skills add` — see `agents/skills/README.md` Optional packs.

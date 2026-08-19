@@ -1,6 +1,5 @@
-# Sajjad's Rails-first dotfiles
+# Rails-first developer dotfiles
 
-[![Quality](https://github.com/sajjadmurtaza/dotfiles/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/sajjadmurtaza/dotfiles/actions/workflows/shellcheck.yml)
 [![Ruby on Rails](https://img.shields.io/badge/Rails-8.x-ready-CC0000?logo=rubyonrails&logoColor=white)](https://rubyonrails.org/)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon-first-111827?logo=apple)](https://www.apple.com/macos/)
 [![Agent skills](https://img.shields.io/badge/skills-Codex%20%7C%20Claude%20%7C%20Cursor-7C3AED)](agents/skills/)
@@ -38,13 +37,14 @@ preview → confirm → back up conflicts → apply → verify
 
 ```sh
 mkdir -p "$HOME/work"
-git clone git@github.com:sajjadmurtaza/dotfiles.git "$HOME/work/dotfiles"
+DOTFILES_REPOSITORY="https://github.com/your-account/dotfiles.git"
+git clone "$DOTFILES_REPOSITORY" "$HOME/work/dotfiles"
 cd "$HOME/work/dotfiles"
 
 ./install --dry-run --profile rails
 ```
 
-Use `git@github-secondary:sajjadmurtaza/dotfiles.git` if your SSH config names that GitHub account `github-secondary`.
+Set `DOTFILES_REPOSITORY` to the HTTPS or SSH URL for the repository or your fork.
 
 The preview prints selected packages and mise tools. When `rcm` is already installed, it also prints every mapping and backup. On a fresh Mac, the installer cannot calculate that link map until the core package step installs `rcm`; it then pauses with the complete preview before changing your home directory. Dry-run changes nothing.
 
@@ -54,17 +54,32 @@ The preview prints selected packages and mise tools. When `rcm` is already insta
 ./install --profile rails
 ```
 
-The installer asks before package changes and again before links. Existing conflicts and obsolete asdf-era runtime files move to:
+The installer asks before package changes and again before links. If an existing home file conflicts with a managed file, the installer names it, explains the impact, and requires the exact word `replace`. A simple `y` does not approve replacement. Approved conflicts and obsolete asdf-era runtime files move to:
 
 ```text
 ~/.dotfiles-backups/<UTC timestamp>/
 ```
 
-For automation, `--yes` skips prompts but still performs backups:
+> [!WARNING]
+> Replacing `~/.zshrc` can change Oh My Zsh themes, plugins, aliases, and startup behavior. Replacing `~/.gitconfig` can change Git identity and signing. Cancel first and move Oh My Zsh theme/plugins into `~/.zshrc.pre.local`, aliases/functions into `~/.zshrc.local`, and Git settings into `~/.gitconfig.local` or `~/.gitconfig.work`.
+
+> [!NOTE]
+> The installer does not manage `~/.oh-my-zsh`, `~/.ssh`, or `~/.config/gh`; installed frameworks, SSH keys, and GitHub CLI authentication remain untouched. Only paths printed in the link preview are candidates for replacement.
+
+For automation, `--yes` skips ordinary prompts and succeeds only when no existing files need replacement:
 
 ```sh
 ./install --profile rails --yes
 ```
+
+After reviewing the dry-run output, explicitly authorize conflict replacement when that is intentional:
+
+```sh
+./install --profile rails --yes --replace-conflicts
+```
+
+> [!IMPORTANT]
+> `--replace-conflicts` never deletes the originals. They remain under `~/.dotfiles-backups/<UTC timestamp>/`, and a failed `rcup` restores them automatically.
 
 Open a new shell and verify:
 
@@ -84,7 +99,7 @@ Profiles compose automatically. `rails` is the default and includes `core` and `
 | `core` | Git, mise, rcm, shell tools, lint/format utilities, Gitleaks |
 | `rails` | Ruby, Node LTS, PostgreSQL client, ImageMagick, Overmind |
 | `frontend` | Node LTS and Caddy |
-| `ai` | Semgrep; shared agent skills are linked for every profile |
+| `ai` | Semgrep; agent skills are installed separately with the Skills CLI |
 | `docker` | Docker Desktop; opt in explicitly |
 | `extras` | media, network, backup, publishing, and selected desktop tools |
 
@@ -130,14 +145,33 @@ The [`ruby-on-rails-dev`](agents/skills/ruby-on-rails-dev/) skill covers version
 
 ## Codex, Claude Code, and Cursor
 
-The source of truth is [`agents/skills/`](agents/skills/). `rcm` links it to `~/.agents/skills`, and the same skills can be installed project-locally for all three agents.
+The source of truth is [`agents/skills/`](agents/skills/). Install the core workflow globally on your own workstation so it is available in every repository:
 
 ```sh
-npx skills add sajjadmurtaza/dotfiles/agents/skills \
+npx skills add ./agents/skills \
+  -g \
+  --copy \
   -a codex -a claude-code -a cursor \
-  --skill dev ruby-dev ruby-on-rails-dev code-review \
+  --skill dev ruby-dev ruby-on-rails-dev code-review pull-request \
   -y
 ```
+
+This is the recommended personal setup and installs under `~/.agents/skills/`. Open a new Codex task, Claude Code session, or Cursor Agent chat after installation. A project-local install is optional and should be committed only when the team wants those skills to travel with that repository; see the [cross-agent guide](docs/ai-agents.md#project-local-optional).
+
+> [!IMPORTANT]
+> **Install globally once per machine.** You do not need to add these skills to every application repository.
+
+### Update installed skills
+
+After published skill changes are available, update every globally installed skill and verify the result:
+
+```sh
+npx skills update -g -y
+npx skills list -g
+```
+
+> [!TIP]
+> Open a new Codex task, Claude Code session, or Cursor Agent chat after updating so the agent reloads its skill catalog.
 
 | Agent | Invoke | Discover |
 | --- | --- | --- |
@@ -161,6 +195,7 @@ Tracked configuration loads optional local files. Copy only the examples you nee
 
 ```sh
 cp docs/examples/profile.local "$HOME/.profile.local"
+cp docs/examples/zshrc.pre.local "$HOME/.zshrc.pre.local"
 cp docs/examples/zshrc.local "$HOME/.zshrc.local"
 cp docs/examples/gitconfig.local "$HOME/.gitconfig.local"
 cp docs/examples/gitconfig.work "$HOME/.gitconfig.work"
@@ -169,6 +204,7 @@ cp docs/examples/gitconfig.work "$HOME/.gitconfig.work"
 | File | Purpose |
 | --- | --- |
 | `~/.profile.local` | environment shared by login/interactive shells |
+| `~/.zshrc.pre.local` | Oh My Zsh/Prezto theme, plugins, and startup inputs |
 | `~/.zshrc.local` | machine-specific aliases and interactive setup |
 | `~/.gitconfig.local` | personal Git name, email, signing |
 | `~/.gitconfig.work` | identity/settings for repositories under `~/work/company/` |
@@ -238,7 +274,8 @@ The design and extension rules are in [docs/architecture.md](docs/architecture.m
 
 - There is no telemetry, owner-controlled service, or remote reporting.
 - A Git remote cannot access your machine; it transfers repository data only when you run Git.
-- `--yes` never disables conflict backups.
+- `--yes` refuses existing-file replacement unless `--replace-conflicts` is also present.
+- Approved conflicts are backed up before linking and restored automatically if link application fails.
 - Package installation, macOS defaults, repository updates, and backup transfers require explicit commands.
 - Run `./install --dry-run` and review diffs before applying updates from any public dotfiles repository.
 

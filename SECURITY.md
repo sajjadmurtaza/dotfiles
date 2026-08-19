@@ -10,7 +10,10 @@ Git remotes transfer repository data only when a user runs Git. Cloning or using
 
 - Start with `./install --dry-run --profile rails`.
 - The apply path previews `lsrc`, moves conflicts to `~/.dotfiles-backups/<timestamp>/`, then invokes `rcup`.
-- `--yes` skips confirmation prompts but never skips conflict backups.
+- Interactive replacement requires typing `replace`; a simple `y` is insufficient.
+- `--yes` refuses existing-file replacement unless `--replace-conflicts` is also present.
+- Approved conflicts are backed up before `rcup` and restored if link application fails.
+- Preserve Oh My Zsh theme/plugins in `~/.zshrc.pre.local`, aliases/functions in `~/.zshrc.local`, and Git customization in `~/.gitconfig.local` or `~/.gitconfig.work` before approving replacement.
 - macOS preference and backup scripts require explicit commands; backup scripts default to a dry run.
 - Review the selected Brewfile sections before installing system packages or applications.
 
@@ -22,4 +25,4 @@ The repository's verification uses Gitleaks when available, and CI scans committ
 
 ## Reporting
 
-Report a suspected vulnerability privately through GitHub's **Security → Report a vulnerability** flow for `sajjadmurtaza/dotfiles`. Do not include live credentials, customer data, or exploit payloads containing sensitive information in a public issue.
+Report a suspected vulnerability privately through this repository's **Security → Report a vulnerability** flow. Do not include live credentials, customer data, or exploit payloads containing sensitive information in a public issue.

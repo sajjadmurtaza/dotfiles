@@ -14,7 +14,7 @@ module Dotfiles
     def run
       exact_mise_versions
       brewfile_profiles
-      forbidden_identity
+      forbidden_personalization
       ruby_syntax
       shell_syntax
       skill_shapes
@@ -48,18 +48,33 @@ module Dotfiles
       @failures << e.message
     end
 
-    def forbidden_identity
-      needles = [["gildes", "marais"].join, ["gil", "barbara"].join]
+    def forbidden_personalization
+      needles = [
+        ["gil", "desmarais"].join,
+        ["gil", "barbara"].join,
+        ["saj", "jad"].join,
+        ["mur", "taza"].join,
+        ["gor", "eha"].join,
+        ["cas", "par"].join
+      ]
       files = Dir.glob(File.join(@root, "**", "*"), File::FNM_DOTMATCH).reject do |path|
         File.directory?(path) || path.include?("/.git/")
       end
       match = files.find do |path|
-        body = File.binread(path)
-        body.valid_encoding? && needles.any? { |needle| body.downcase.include?(needle) }
+        body = File.symlink?(path) ? File.readlink(path) : File.binread(path)
+        next false unless body.valid_encoding?
+
+        normalized = body.downcase
+        needles.any? { |needle| normalized.include?(needle) } || body.match?(%r{/Users/[A-Za-z0-9._-]+/})
       rescue StandardError
         false
       end
-      @failures << "upstream owner identity remains: #{match.sub("#{@root}/", '')}" if match
+      @failures << "tracked personalization remains: #{match.sub("#{@root}/", '')}" if match
+
+      gitconfig = File.join(@root, "gitconfig")
+      return unless File.file?(gitconfig) && File.read(gitconfig).match?(/^\[user\]$/)
+
+      @failures << "gitconfig contains a tracked user identity; use ~/.gitconfig.local"
     end
 
     def ruby_syntax

@@ -70,7 +70,7 @@ then post-delivery Assure before reporting done. When a PR is opened for the tic
 - Draft summary + description from **code-backed evidence** (paths, keys, blast radius, AC), not vague intent.
 - Prefer parenting under the epic the user named (`parent` / Epic Link).
 - After create: verify parent/epic; if the issue lands in an unhelpful default (e.g. **On Hold**), transition to **Ready** (or the project’s backlog-ready status) unless the user asked to leave it held.
-- Link predecessors with `getIssueLinkTypes` → correct type name (Caspar: often `Related to`).
+- Link predecessors with `getIssueLinkTypes`, then use the relationship name returned by the target Jira project.
 - Do **not** start implement unless the user also asked to implement.
 
 ## Observability evidence

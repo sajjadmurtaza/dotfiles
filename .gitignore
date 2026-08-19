@@ -17,4 +17,6 @@ vim/viminfo
 zsh/local_aliases
 skill/.cache/
 .agents/skills/
+/.claude/skills/
+/skills-lock.json
 mise.local.toml

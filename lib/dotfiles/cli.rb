@@ -42,15 +42,16 @@ module Dotfiles
 
       Installer.new(root: @root, home: @home, profiles: Profiles.new(options[:profiles]), shell: @shell,
                     dry_run: options[:dry_run], yes: options[:yes], skip_packages: options[:skip_packages],
-                    input: @input, output: @output).run
+                    replace_conflicts: options[:replace_conflicts], input: @input, output: @output).run
     end
 
     def parse_install_options
-      options = { profiles: [], dry_run: false, yes: false, skip_packages: false }
+      options = { profiles: [], dry_run: false, yes: false, skip_packages: false, replace_conflicts: false }
       parser = OptionParser.new do |opts|
         opts.on("--profile NAME", "core, rails, frontend, docker, ai, or extras") { |name| options[:profiles].concat(name.split(",")) }
         opts.on("--dry-run", "show every action without changing files") { options[:dry_run] = true }
-        opts.on("--yes", "skip prompts; conflict backups still run") { options[:yes] = true }
+        opts.on("--yes", "skip ordinary prompts; existing files still require --replace-conflicts") { options[:yes] = true }
+        opts.on("--replace-conflicts", "back up and replace existing home files") { options[:replace_conflicts] = true }
         opts.on("--skip-packages", "link configuration without installing packages") { options[:skip_packages] = true }
         opts.on("-h", "--help") { @output.puts(opts); options[:help] = true }
       end
@@ -70,7 +71,8 @@ module Dotfiles
       confirm_update! unless yes
       @shell.run("git", "-C", @root, "pull", "--ff-only")
       Installer.new(root: @root, home: @home, profiles: Profiles.new(["core"]), shell: @shell,
-                    dry_run: false, yes: true, skip_packages: true, input: @input, output: @output).run
+                    dry_run: false, yes: true, skip_packages: true, replace_conflicts: false,
+                    input: @input, output: @output).run
     end
 
     def confirm_update!
