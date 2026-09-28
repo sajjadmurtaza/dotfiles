@@ -3,8 +3,8 @@ name: pull-request
 description: >
   Pull-request GitHub lifecycle. Use when the user wants to open a pull request,
   slice one branch into smaller pull requests, update PR title or description,
-  post an already-verified finding ledger, resolve review feedback on the current
-  branch, or reply on existing review threads.
+  post an already-verified finding ledger, resolve review feedback, repair failed
+  CI, resolve merge conflicts, unblock a PR, or reply on existing review threads.
 ---
 
 # Pull Request
@@ -23,6 +23,9 @@ Map the user prompt to exactly one branch:
 | Submit already-verified findings on a PR                     | **comment** |
 | Fix review feedback end-to-end (assess, code, push, resolve) | **resolve** |
 | Respond on existing threads only — no new findings, no code  | **reply**   |
+| Diagnose and fix failing GitHub Actions checks               | **fix-ci**  |
+| Resolve merge conflicts without changing feature intent      | **conflicts** |
+| Clear all current PR blockers in dependency order            | **unblock** |
 
 Ambiguous routing:
 
@@ -36,6 +39,9 @@ Ambiguous routing:
 | "split into PRs", "slice branch"                                                                                      | **slice**                                      |
 | "update title", "update description", "update PR title/desc", "refresh PR summary", "/pull-request update title+desc" | **retitle**                                    |
 | "update the PR" (no code change and no review-feedback ask)                                                           | **retitle**                                    |
+| "fix CI", "repair checks", "red build"                                                                             | **fix-ci**                                     |
+| "resolve conflicts", "update branch after conflicts"                                                                | **conflicts**                                  |
+| "unblock", "make merge-ready", several blocker types                                                                | **unblock** — conflicts → resolve → fix-ci     |
 | "review the PR"                                                                                                       | stop — use the **code-review** skill            |
 | "draft a review" (read-only findings)                                                                                 | stop — use **code-review** `findings`           |
 | "post review comments", "new findings on PR", "review and post on GitHub"                                             | stop — use **code-review** `publish`            |
@@ -67,6 +73,9 @@ Load only the matched branch reference:
 - **comment** — follow [`reference/comment.md`](reference/comment.md). Load [`reference/gh-api.md`](reference/gh-api.md) when posting.
 - **resolve** — follow [`reference/resolve.md`](reference/resolve.md). Load [`reference/gh-api.md`](reference/gh-api.md) when resolving threads.
 - **reply** — follow [`reference/reply.md`](reference/reply.md). Load [`reference/gh-api.md`](reference/gh-api.md) when posting replies.
+- **fix-ci** — follow [`reference/fix-ci.md`](reference/fix-ci.md).
+- **conflicts** — follow [`reference/conflicts.md`](reference/conflicts.md).
+- **unblock** — refresh live PR state before each step and run only the required branches in this order: **conflicts → resolve → fix-ci**. Never approve or merge automatically.
 
 ## Handoff
 
@@ -74,6 +83,7 @@ Load only the matched branch reference:
 - Posting a supplied, already-verified ledger stays in **comment**.
 - Resolving or replying to existing feedback stays in this skill.
 - Narrative-only PR updates stay in **retitle**.
+- Multi-blocker requests stay in **unblock**; refresh state between branches instead of applying a stale checklist.
 
 ## Completion criteria
 
@@ -85,3 +95,6 @@ Load only the matched branch reference:
 | **comment** | Every finding verified against PR head SHA + diff line; pending/submitted state matches user ask; landed comments verified via API                                   |
 | **resolve** | Every unresolved thread assessed; valid ones fixed+pushed; resolved threads cite commit hash or left open with reason                                                |
 | **reply**   | Every requested thread has a reply; no new inline findings; no code changes                                                                                          |
+| **fix-ci**  | Failed checks explained from focused logs; authorized fixes validated and pushed, or the external blocker is reported clearly                                      |
+| **conflicts** | Conflicts resolved with feature intent preserved; repository gates pass; updated branch pushed when requested                                                       |
+| **unblock** | Current blockers cleared in conflicts → resolve → fix-ci order; final live state reported; no automatic approval or merge                                             |

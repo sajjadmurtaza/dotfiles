@@ -152,11 +152,10 @@ npx skills add ./agents/skills \
   -g \
   --copy \
   -a codex -a claude-code -a cursor \
-  --skill dev ruby-dev ruby-on-rails-dev code-review pull-request \
   -y
 ```
 
-This is the recommended personal setup and installs under `~/.agents/skills/`. Open a new Codex task, Claude Code session, or Cursor Agent chat after installation. A project-local install is optional and should be committed only when the team wants those skills to travel with that repository; see the [cross-agent guide](docs/ai-agents.md#project-local-optional).
+This installs the complete first-party pipeline under `~/.agents/skills/`, including `architecture`, which `dev` uses for design judgment. Open a new Codex task, Claude Code session, or Cursor Agent chat after installation. A project-local install is optional and should be committed only when the team wants those skills to travel with that repository; see the [cross-agent guide](docs/ai-agents.md#project-local-optional).
 
 > [!IMPORTANT]
 > **Install globally once per machine.** You do not need to add these skills to every application repository.
@@ -171,13 +170,15 @@ npx skills list -g
 ```
 
 > [!TIP]
-> Open a new Codex task, Claude Code session, or Cursor Agent chat after updating so the agent reloads its skill catalog.
+> `npx skills update -g -y` refreshes installed skills. When the repository adds a new skill, rerun the full `npx skills add ./agents/skills ...` command above so it is discovered. Then open a new agent session.
 
 | Agent | Invoke | Discover |
 | --- | --- | --- |
 | Codex | `$dev`, `$ruby-on-rails-dev` | `/skills` or type `$` |
 | Claude Code | `/dev`, `/ruby-on-rails-dev` | `/skills` |
 | Cursor | choose `/dev` or `/ruby-on-rails-dev` | type `/` in Agent chat |
+
+For ambiguous work, start with `$triage`, `$prompt-compiler`, `$jira-ticket`, or `$product-owner`. For a clear implementation, start with `$dev`. Approved multi-phase plans can run through `$orchestrator`; delivery finishes with `$code-review` and `$pull-request` when requested.
 
 Try this prompt:
 
@@ -199,6 +200,7 @@ cp docs/examples/zshrc.pre.local "$HOME/.zshrc.pre.local"
 cp docs/examples/zshrc.local "$HOME/.zshrc.local"
 cp docs/examples/gitconfig.local "$HOME/.gitconfig.local"
 cp docs/examples/gitconfig.work "$HOME/.gitconfig.work"
+cp docs/examples/gitconfig.personal "$HOME/.gitconfig.personal"
 ```
 
 | File | Purpose |
@@ -206,8 +208,9 @@ cp docs/examples/gitconfig.work "$HOME/.gitconfig.work"
 | `~/.profile.local` | environment shared by login/interactive shells |
 | `~/.zshrc.pre.local` | Oh My Zsh/Prezto theme, plugins, and startup inputs |
 | `~/.zshrc.local` | machine-specific aliases and interactive setup |
-| `~/.gitconfig.local` | personal Git name, email, signing |
-| `~/.gitconfig.work` | identity/settings for repositories under `~/work/company/` |
+| `~/.gitconfig.local` | personal Git name, email, signing (default everywhere) |
+| `~/.gitconfig.work` | identity/settings for repositories under `~/work/` |
+| `~/.gitconfig.personal` | personal identity for repositories under `~/work/others/` |
 
 Keep tokens, customer names, private hosts, and employer-only paths out of this public repository.
 

@@ -13,11 +13,10 @@ npx skills add ./agents/skills \
   -g \
   --copy \
   -a codex -a claude-code -a cursor \
-  --skill dev ruby-dev ruby-on-rails-dev code-review pull-request \
   -y
 ```
 
-The global location is `~/.agents/skills/<skill-name>/`. Open a new task or agent session after installing so its skill catalog refreshes. Use `npx skills list -g` to inspect the global installation.
+The global location is `~/.agents/skills/<skill-name>/`. Installing the complete store keeps required dependencies such as `architecture` available to `dev`. Open a new task or agent session after installing so its skill catalog refreshes. Use `npx skills list -g` to inspect the global installation.
 
 > [!IMPORTANT]
 > A global installation is available from every repository. Do not repeat the project-local installation unless the repository should carry and maintain its own skill copies.
@@ -38,7 +37,7 @@ npx skills update code-review dev ruby-dev ruby-on-rails-dev pull-request -g -y
 ```
 
 > [!TIP]
-> Restart the agent or open a new task/session after updating. Maintainers testing unpushed edits should rerun the global `npx skills add ./agents/skills ... --copy` command from the dotfiles repository root instead; `skills update` follows the recorded published source.
+> `npx skills update` refreshes installed skills. Rerun the full `npx skills add ./agents/skills ... --copy` command after the store adds a new skill or when testing unpublished local edits. Restart the agent or open a new task/session afterward.
 
 ### Project-local — optional
 
@@ -49,7 +48,6 @@ DOTFILES_SKILLS_SOURCE="https://github.com/your-account/dotfiles/tree/main/agent
 npx skills add "$DOTFILES_SKILLS_SOURCE" \
   --copy \
   -a codex -a claude-code -a cursor \
-  --skill dev ruby-dev ruby-on-rails-dev code-review pull-request \
   -y
 ```
 
@@ -67,6 +65,18 @@ This creates repository-level agent files. Review them like code and commit them
 | Cursor | Select `/dev` or `/ruby-on-rails-dev` | type `/` in Agent chat |
 
 Agents can also select a skill automatically from its description. Explicit invocation is useful when the workflow must be predictable.
+
+## Pipeline entry points
+
+| Situation | Start with | Next |
+| --- | --- | --- |
+| Incident or unclear operational problem | `triage` | product decision or `$dev plan` |
+| Ambiguous developer request | `prompt-compiler` | `$dev plan` |
+| Jira-led work | `jira-ticket` | product gate when needed, then `$dev` |
+| Product scope decision | `product-owner` | `$dev` only after Build Now |
+| Clear implementation | `dev` | architecture/runtime routing, then code review |
+| Approved multi-phase plan | `orchestrator` | one cumulative `code-review` pass |
+| PR attention report | `pr-sweep` | exact `pull-request`, `dependabot`, or `code-review` action |
 
 ## Rails example
 

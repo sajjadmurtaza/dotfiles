@@ -13,11 +13,10 @@ npx skills add ./agents/skills \
   -g \
   --copy \
   -a codex -a claude-code -a cursor \
-  --skill dev ruby-dev ruby-on-rails-dev code-review pull-request \
   -y
 ```
 
-Run this from the dotfiles repository root. It installs the core workflow once for every repository and requires Node.js (`npx`). Open a new agent task/session after installation.
+Run this from the dotfiles repository root. It installs the complete first-party pipeline once for every repository and requires Node.js (`npx`). Installing the whole store ensures routers such as `dev` also have required dependencies such as `architecture` and `code-review`.
 
 ```sh
 npx skills list -g
@@ -40,7 +39,7 @@ npx skills update code-review dev ruby-dev ruby-on-rails-dev pull-request -g -y
 ```
 
 > [!TIP]
-> Open a new agent task/session after updating. For unpushed local store edits, rerun the global install command above from the dotfiles repository root; the update command follows the recorded published source.
+> `npx skills update -g -y` refreshes skills already installed. After this repository adds a new skill, rerun the full global `npx skills add ./agents/skills ...` command so the new skill is discovered. Open a new agent task/session after either operation.
 
 ### Project-local — optional and repository-specific
 
@@ -51,7 +50,6 @@ DOTFILES_SKILLS_SOURCE="https://github.com/your-account/dotfiles/tree/main/agent
 npx skills add "$DOTFILES_SKILLS_SOURCE" \
   --copy \
   -a codex -a claude-code -a cursor \
-  --skill dev ruby-dev ruby-on-rails-dev code-review pull-request \
   -y
 ```
 
@@ -96,30 +94,33 @@ Start Build work with `dev`; it routes Rails changes through `ruby-dev` and `rub
 ```mermaid
 flowchart LR
   Intent[Intent] --> Product[Product]
-  Product --> Solution[Solution]
-  Solution --> Build[Build]
+  Product --> Build["Build: dev + architecture"]
   Build --> Assure[Assure]
   Assure --> Ship[Ship]
-  Ship --> Run[Run]
-  Run --> Explain[Explain]
+  Ship --> Explain[Explain]
   Explain --> Intent
+  Assure -. reusable learning .-> Harvest[Harvest]
+  Ship -. reusable learning .-> Harvest
+  Harvest --> Intent
+  Harvest --> Build
   Decide[Decide] -.-> Intent
   Decide -.-> Product
-  Decide -.-> Solution
+  Decide -.-> Build
 ```
 
 ## Domain map
 
 | Domain       | Job                              | Skill(s)                                                                                                                    | Primary branches                                                                                                                        |
 | ------------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| **Intent**   | Fuzzy need → actionable work     | `prompt-synthesis`; `jira-ticket`                                                                                           | `code` \| `architecture` \| `product` (default: Shared prep)                                                                            |
+| **Intent**   | Evidence and constraints → one route | `triage`; `prompt-compiler`; `jira-ticket`; `orchestrator`; `pr-sweep`                                                  | intake; compile; Jira workflow; run approved plan; report PR attention                                                                    |
 | **Product**  | What to build; admit/defer scope | `product-owner`                                                                                                             | `gate` (default); stubs: prioritize, story-slice, experiment                                                                            |
 | **Solution** | How the system should work       | `architecture`; `docs` **`architecture`** (verify-only); `dev` **`plan`** (implementation-plan carrier)                     | craft: `deep-modules` \| `refactor-types` \| `refactor-boundaries` \| `performance`; survey: `structure-survey`; plan: `dev` **`plan`** |
 | **Build**    | Change the codebase              | `dev` (router); adapters `ruby-dev`, `rust-dev`, `swift-dev`, `typescript-dev`; overlays `ruby-on-rails-dev`, `swiftui-dev` | `plan` \| `implement`; classify: surgical \| design \| review-hand-off                                                                  |
 | **Assure**   | Safe to merge?                   | `code-review`                                                                                                                | `findings`, `publish`, `quality` (lenses: tests, perf, security, legacy)                                                                |
-| **Ship**     | Land on mainline                 | `pull-request`; `release`                                                                                                   | PR: open, slice, comment, reply, resolve; release: `notes`                                                                              |
+| **Ship**     | Land and maintain mainline       | `pull-request`; `dependabot`; `release`                                                                                     | PR: open, slice, comment, reply, resolve, fix-ci, conflicts, unblock; Dependabot: configure/triage; release: notes                      |
 | **Explain**  | Humans understand state          | `communication`; `docs`                                                                                                     | see skill branches                                                                                                                      |
 | **Decide**   | Stress-test choices              | `grilling` (third-party); `product-owner` Forced Challenge                                                                  | —                                                                                                                                       |
+| **Harvest**  | Preserve reusable learning/debt  | `harvest`                                                                                                                   | `distill` \| `debt`                                                                                                                     |
 
 Published Build overlays: `ruby-on-rails-dev`, `swiftui-dev`. `rust-dev` can compose with compatible Rust depth packs when they are installed separately.
 
@@ -145,34 +146,38 @@ More: [skills.sh](https://skills.sh/). Swift catalog: [Swift-Agent-Skills](https
 
 ## Compose / handoffs
 
-**Build path (runtime):** `$dev` ⇄ `architecture` → `code-review` → `pull-request`. `$dev` is the only Build entry; `architecture` is shift-left craft inside Build — Solution-before-Build in the domain map is conceptual, not a second entrypoint.
+**Full path:** `triage` / `jira-ticket` / `prompt-compiler` → `$dev plan` → `orchestrator` → `$dev implement` ⇄ `architecture` → `code-review` → `pull-request`. Small, already-clear tasks may enter directly through `$dev implement`.
 
 One-way rules (prevent domain collisions):
 
 1. **Product before non-trivial scope** — `jira-ticket` / feature asks load `product-owner` **`gate`**. Impl continues only on **Build Now** → `$dev` only (classifies; loads `architecture` when design). Skip for pure bug fix, refactor, infra. Product is gate-only this pass (stubs unauthored).
 2. **Craft ≠ product** — `architecture` / `dev` / `*-dev` / `code-review` never answer “should we build X?”
-3. **Build entry is `$dev`** — classify / route / phase commits live there. Class `design` → `architecture` (branch pick inside); do not inline craft in `dev` or `*-dev`. Multi-load `{lang}-dev` from **touched-file** evidence when a change spans runtimes. Packs: Stop — read `$dev` Shared prep before any delta.
-4. **Implementation plans → `$dev` `plan`** — when writing an implementation plan (including Cursor plan mode), invoke `$dev` branch **`plan`** and load [`dev/reference/plan-pipeline.md`](dev/reference/plan-pipeline.md). Plan mode: product stance section only — `/product-owner` explicit for admission. `jira-ticket` Planning Checkpoint emits via `$dev` **`plan`** when phases/commits matter.
+3. **Build entry is `$dev`** — `architecture` axioms load for every implementation; branch references load only when design is earned. Runtime adapters remain deltas, not competing entrypoints.
+4. **Intent → plan → execution** — `prompt-compiler` owns intent constraints, `$dev plan` owns repository discovery and `.agents/plan/<slug>.md`, and `orchestrator` owns bounded sequential execution. Do not duplicate those responsibilities.
 5. **Phase CC → merge → notes** — Solution/Build plan phases author Conventional Commits (validate → ≥1 CC + rationale) via `architecture` Shared prep and `$dev` — by default off the default branch; ask early when on default. After merge, `release` **`notes`** consumes history. At PR open, `pull-request` **`open`** applies the same format only if the tree is still dirty. Format SoT: [`CONTEXT.md`](CONTEXT.md).
-6. **Assure → Ship** — `findings` never posts; `publish` (e2e → GitHub `COMMENT`) lives under `code-review`; verified-ledger posting lives under `pull-request` **`comment`** — never reverse those two. After Build delivery from a plan, spawn `code-review` **`findings`** (security/quality when in scope) before reporting done; if subagent unavailable, fresh in-session pass. If user asked to land and readiness is Yes/Conditional → `pull-request` **`open`**.
+6. **Assure → Ship** — `findings` never posts; `publish` owns end-to-end review publication; `pull-request comment` posts an already-verified ledger. Non-trivial Build delivery receives a fresh Assure pass; orchestrated work receives one cumulative pass.
 7. **Explain → docs** — `communication` → `docs` **`editor`** when the artifact is a README/runbook, not a message. Never reverse. `docs` **`architecture`** is Solution-adjacent verify-only (no HLD/ADR author).
 8. **Overlay via `$dev` route** — `ruby-on-rails-dev` with `ruby-dev`; `swiftui-dev` with `swift-dev` (loaded by `$dev`, not as competing Build entries). Depth packs stay on pack **Compose routes**.
 9. **Decide** — `grilling` stress-tests Intent / Product / Solution; product doctrine stays with `product-owner` when the topic is scope.
 10. **API-truth soft deps** — API truth assumes Dash and/or Context7; if neither is available, agents warn once on first material API fallthrough then fall back (do not invent APIs). See `$dev` / [`CONTEXT.md`](CONTEXT.md).
 11. **Observability cue** — APM / error tracking / logging via matching MCP when links appear; not a vendor SoT under Build.
+12. **Sweep never fixes** — `pr-sweep` emits an attention ledger. Rows route to `pull-request`, `dependabot`, or `code-review`.
+13. **Unblock in dependency order** — `pull-request unblock` refreshes live state between conflicts → resolve → fix-ci and never auto-approves or merges.
+14. **Harvest only signal** — reusable failure classes go to concise rules; deferred structural friction goes to `.agents/debt-ledger.md`; routine success creates nothing.
 
 ## Skill index
 
 | Domain   | Skills                                                                                                                                                                                                                                                                    |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Intent   | [`prompt-synthesis`](prompt-synthesis/), [`jira-ticket`](jira-ticket/)                                                                                                                                                                                                    |
+| Intent   | [`triage`](triage/), [`prompt-compiler`](prompt-compiler/), [`jira-ticket`](jira-ticket/), [`orchestrator`](orchestrator/), [`pr-sweep`](pr-sweep/)                                                                                                                 |
 | Product  | [`product-owner`](product-owner/)                                                                                                                                                                                                                                         |
 | Solution | [`architecture`](architecture/), [`docs`](docs/)                                                                                                                                                                                                                          |
 | Build    | [`dev`](dev/), [`ruby-dev`](ruby-dev/), [`rust-dev`](rust-dev/), [`swift-dev`](swift-dev/), [`typescript-dev`](typescript-dev/), [`ruby-on-rails-dev`](ruby-on-rails-dev/), [`swiftui-dev`](swiftui-dev/) |
 | Assure   | [`code-review`](code-review/)                                                                                                                                                                                                                                               |
-| Ship     | [`pull-request`](pull-request/), [`release`](release/)                                                                                                                                                                                                                    |
+| Ship     | [`pull-request`](pull-request/), [`dependabot`](dependabot/), [`release`](release/)                                                                                                                                                                                       |
 | Explain  | [`communication`](communication/), [`docs`](docs/)                                                                                                                                                                                                                        |
 | Decide   | `grilling` (third-party — [Optional packs](#optional-packs-not-os-sot))                                                                                                                                                                                                   |
+| Harvest  | [`harvest`](harvest/)                                                                                                                                                                                                                                                       |
 
 ## Authoring laws
 

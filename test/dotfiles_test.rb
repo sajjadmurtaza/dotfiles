@@ -93,6 +93,20 @@ class ShellStartupTest < Minitest::Test
   end
 end
 
+class GitconfigPolicyTest < Minitest::Test
+  def test_scopes_work_identity_with_includeif_and_keeps_personal_default
+    gitconfig = File.read(File.expand_path("../gitconfig", __dir__))
+
+    assert_match(/^\[include\]\n\tpath = ~\/\.gitconfig\.local$/m, gitconfig)
+    assert_includes(gitconfig, "includeIf \"gitdir:~/work/\"")
+    assert_includes(gitconfig, "includeIf \"gitdir:~/work/others/\"")
+    assert_includes(gitconfig, "path = ~/.gitconfig.work")
+    assert_includes(gitconfig, "path = ~/.gitconfig.personal")
+    refute_match(/^\[include\]\n\tpath = ~\/\.gitconfig\.work$/m, gitconfig)
+    refute_includes(gitconfig, "/Users/")
+  end
+end
+
 class VerifierTest < Minitest::Test
   def test_rejects_tracked_personal_identity
     Dir.mktmpdir do |dir|

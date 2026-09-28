@@ -26,6 +26,7 @@ Never ask the user to pick the branch when signals are clear.
 | Signal                                        | Branch                 |
 | --------------------------------------------- | ---------------------- |
 | implementation plan, plan mode, phased plan   | `plan`                 |
+| run or resume `.agents/plan/<slug>.md`         | stop — `orchestrator`  |
 | implement, fix, feature, change the code      | `implement`            |
 | “should we build X?”                          | stop — `product-owner` |
 | assure / findings / tests review / merge prep | stop — `code-review`    |
@@ -38,6 +39,7 @@ Never ask the user to pick the branch when signals are clear.
 3. **Observability cue:** if the ask cites **APM / traces, error tracking, or logging** links/IDs (or equivalent incident signals), discover and use the **matching observability MCP** when available; fold findings into evidence before coding. Do not hardcode a vendor. Do not invent a full observability skill. If no observability MCP is available, say so and continue with ask text + codebase evidence. Vendor-specific tool recipes stay out of `$dev`.
 4. **Security cue:** when the ask/change touches authn/authz, tenancy, PII/PHI, secrets, exports, webhooks, raw SQL, or privileged ops, prefer `code-review` **`security`** on the post-delivery Assure pass (and co-load during implement when clearly needed). Dense Rails Security Trigger Matrix stays in the overlay / `AGENTS.md` — this cue is light only.
 5. **Classify (Shift-Left Architecture Enforcement):** `surgical` | `design` | `review-hand-off`.
+   - Load `architecture/SKILL.md` on every `implement` so its core axioms constrain even surgical work. Load branch references only when `design` is earned.
    - Earn `design` when any of the **core six**: dual ownership / shallow modules / primitive obsession across boundaries / structural cleanup ask / measured perf / type-driven refactor.
    - **Gated Rule:** When `design` is earned, DO NOT edit code immediately. You MUST invoke `architecture` (load its axioms and matched references) and document the structural/seam decisions in the plan or milestone ledger before writing code.
    - Language packs may append a short “also earn when…” list only — do not restate the core six there as a second SoT.
@@ -70,10 +72,11 @@ Never ask the user to pick the branch when signals are clear.
 
 ## Handoff
 
-Build path: `$dev` ⇄ `architecture` → `code-review` → `pull-request` (see [`README.md`](../README.md) Compose).
+Build path: `prompt-compiler` → `$dev plan` → `orchestrator` → `$dev implement` ⇄ `architecture` → `code-review` → `pull-request` (see [`README.md`](../README.md) Compose).
 
 - `design` → `architecture` (branch pick inside); then continue implement via this skill → routed `{lang}-dev` / overlay.
-- **Post-delivery Assure** (plan-driven `implement`, or work that followed `$dev` `plan`): before reporting delivery to the user, prefer spawning a **new agent** that runs `code-review` (default: **`findings`** (+ warranted lenses); include **`security`** when the Shared prep security cue matched). Invoke **`quality`** when in scope: explicit merge-prep / boy-scout ask, or findings show clear fixable P0/P1 the user already authorized to change — never infer `quality` from bare “review.” **Fallback:** if Task/subagent is unavailable, run `code-review` as a fresh in-session pass (reload skill; do not treat implementer self-check as the review). Report delivery only after that pass returns. Do not claim ship-ready without it. If user asked to land and readiness is Yes/Conditional → continue with `pull-request` **`open`**.
+- Emit the Delivery Ledger defined in [`CONTEXT.md`](../CONTEXT.md) before Assure so verification, target files, commits, active lenses, readiness, and residuals cross the handoff without rediscovery.
+- **Post-delivery Assure:** before reporting any non-trivial delivery, run `code-review` `findings` with warranted lenses. Prefer a fresh agent for multi-phase or security-sensitive work; a fresh in-session pass is sufficient for a small single-surface change. Trivial docs, comment, typo, or one-line configuration changes may skip only when the reason is stated. An `orchestrated: true` worker emits the ledger but skips per-phase Assure because `orchestrator` runs one cumulative review. If the user asked to land and readiness is Yes/Conditional → continue with `pull-request` **`open`**.
 - Assure / ship → `code-review` / `pull-request` — never reverse.
 - Product scope → `product-owner`. Never answer “should we build X?” here.
 - Harvest: only when pain appears twice or the user asked — stage → promote/drop per `architecture/reference/growth.md` (or lang `reference.md` for language-only). Not an append-forever log. No `$dev` harvest theater on every implement.
@@ -84,4 +87,4 @@ Build path: `$dev` ⇄ `architecture` → `code-review` → `pull-request` (see 
 | Branch      | Done when                                                                                                                                                                                                                                                                                                                                                  |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `plan`      | [`reference/plan-pipeline.md`](reference/plan-pipeline.md) ready checklist satisfied; no code written before plan approval                                                                                                                                                                                                                                 |
-| `implement` | Classification stated; shift-left architecture documented if design earned; compat decision stated or user was asked; routed lang pack (+ overlay) handoff fields satisfied; commands + exit honesty; phase commits made or deferred stated; post-delivery Assure (`code-review`) completed (spawn preferred, else fresh in-session) before delivery report |
+| `implement` | Architecture axioms loaded; classification stated; design decisions documented when earned; compat decision stated or user was asked; runtime validation observed; Delivery Ledger emitted; phase commits made or deferred; Assure completed or a trivial-diff skip stated |

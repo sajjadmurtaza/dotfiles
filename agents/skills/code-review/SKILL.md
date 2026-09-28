@@ -105,6 +105,7 @@ When reviewing fixes, reverts, or incident-related changes, check:
 - Posting an already-verified ledger continues with the `pull-request` skill `comment` branch.
 - Findings execution never posts to GitHub.
 - If user asked to land and readiness is Yes/Conditional (owned residuals) → continue with `pull-request` **`open`**. Never auto-open without that ask.
+- When review exposes a reusable failure class or deferred structural debt, hand it to `harvest`; routine reviews do not create permanent rules.
 
 ## Completion criteria
 

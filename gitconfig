@@ -1,14 +1,16 @@
 [core]
 	excludesfile = ~/.gitignore
-	hooksPath = /Users/sajjad/.config/git/hooks
+	hooksPath = ~/.config/git/hooks
 [commit]
 	template = ~/.gitmessage
+	gpgsign = true
 [diff]
 	algorithm = histogram
 [fetch]
 	prune = true
 [user]
 	useConfigOnly = true
+	signingkey = 3626C7C89949E04449B48BC3BA166547876B9BEA
 [init]
 	defaultBranch = main
 [pull]
@@ -19,7 +21,18 @@
 	autoStash = true
 [rerere]
 	enabled = true
+# Path identity (later includeIf wins when overlapping).
+#   everywhere              -> ~/.gitconfig.local   (personal)
+#   ~/work/                 -> ~/.gitconfig.work    (Caspar)
+#   ~/work/others|other/    -> ~/.gitconfig.personal
+#   ~/ai-workspace/         -> ~/.gitconfig.personal
 [include]
-	path = /Users/sajjad/.gitconfig.work
-[includeIf "gitdir:/Users/sajjad/work/others/"]
-	path = /Users/sajjad/.gitconfig.personal
+	path = ~/.gitconfig.local
+[includeIf "gitdir:~/work/"]
+	path = ~/.gitconfig.work
+[includeIf "gitdir:~/work/others/"]
+	path = ~/.gitconfig.personal
+[includeIf "gitdir:~/work/other/"]
+	path = ~/.gitconfig.personal
+[includeIf "gitdir:~/ai-workspace/"]
+	path = ~/.gitconfig.personal

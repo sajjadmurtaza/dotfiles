@@ -112,20 +112,24 @@ _Avoid_: one flattened ordering for both branches
 
 ## Language
 
-**Prompt-synthesis** (skill noun: `prompt-synthesis`):
-Transforms rough notes into a dense paste-ready agent brief. Grills material gaps before emit; never executes the underlying task.
-_Avoid_: prompt-engineer, refine-prompt (triggers only — not skill nouns)
+**Triage** (skill noun: `triage`):
+Evidence-first intake for production incidents and fuzzy operational asks. Emits one Triage Ledger and routes to `product-owner`, `$dev plan`, or `$dev implement`; never implements.
+_Avoid_: using triage for a clear approved plan or a Jira-led workflow
 
-**Code** / **architecture** / **product** (`prompt-synthesis` branches):
-Class rubrics that enrich Context / Constraints / Verify. Default path is Shared prep only when no class fits.
-_Avoid_: general branch; Role/Context/Task/Deliverable templates
+**Prompt-compiler** (skill noun: `prompt-compiler`):
+Compiles ambiguous developer intent into `.agents/compile/<slug>.yaml`: invariants, allowed domains, breaking-change posture, and explicit circuit-breaker consent.
+_Avoid_: implementation phases, commands, target files, or execution state
 
-**Brief fields** (`prompt-synthesis` emit):
-**Goal** · **Context** · **Success** · **Constraints** (omit if empty) · **Verify**. Success = done-when; Verify = proof steps.
-_Avoid_: Role/persona, SynthesisLog, naming OS skills in the emitted brief
+**Orchestrator** (skill noun: `orchestrator`):
+Runs an approved `.agents/plan/<slug>.md` sequentially through isolated `$dev implement` workers, exact file bounds, independently observed gates, phase commits, and one cumulative Assure pass.
+_Avoid_: intent compilation, technical discovery, pushing, or unapproved destructive rollback
+
+**PR sweep** (skill noun: `pr-sweep`):
+Read-only multi-repository attention ledger. Each row names the next skill; it never checks out, fixes, comments, approves, or merges.
+_Avoid_: treating discovery as authorization to mutate a PR
 
 **Handoff**:
-Stops at the paste-ready brief. Does not hand off into Build / Assure / Ship. Intent entrypoints that start from Jira still use `jira-ticket` (and `product-owner` **`gate`** when scope is non-trivial); Build continues via `dev`. Spec/PRD router is **deferred** — no first-party `spec` skill.
+`triage` or `jira-ticket` establishes the route. `prompt-compiler` emits intent constraints → `$dev plan` performs repository discovery → `orchestrator run` executes approved phases via `$dev implement`. Non-trivial product scope passes `product-owner gate` before Build.
 
 # Product Skills Domain
 
@@ -159,7 +163,7 @@ Build domain router — implementation plans and code changes. Branches `plan` |
 _Avoid_: treating `{lang}-dev` as the Build entry; inlining architecture craft here
 
 **Plan** (`dev` branch):
-Implementation-plan carrier. Procedural SoT: `dev/reference/plan-pipeline.md`. Cursor plan mode uses this branch.
+Implementation-plan carrier. Consumes an optional `.agents/compile/<slug>.yaml` and writes `.agents/plan/<slug>.md`. Procedural SoT: `dev/reference/plan-pipeline.md`.
 _Avoid_: inventing a separate Solution plan skill; skipping classify/route in ad-hoc plans
 
 **API truth** / **warn-once fallthrough**:
@@ -175,7 +179,7 @@ Authn/authz, tenancy, PII/PHI, secrets, exports, webhooks, raw SQL, privileged o
 _Avoid_: duplicating the Rails Security Trigger Matrix in `$dev`
 
 **Post-delivery Assure**:
-Before reporting delivery on plan-driven implement: prefer spawn a new agent → `code-review` findings (security when cue matched; `quality` when in scope). Fallback: fresh in-session `code-review` pass. Do not claim ship-ready without it.
+Before reporting a non-trivial implementation: run a fresh `code-review` findings pass (security when cued; `quality` only when explicitly in scope). Orchestrated workers skip per-phase Assure because the orchestrator runs one cumulative pass.
 _Avoid_: implementer self-check as the sole review; inferring `quality` from bare “review”
 
 **Architecture** (skill noun: `architecture`):
@@ -210,9 +214,13 @@ _Avoid_: treating “design” as a skill noun
 Signal that selects `architecture` **`deep-modules`** — not a skill name.
 _Avoid_: deepen-modules skill
 
-**Harvest**:
-Build: pain-twice or user-asked only — `$dev` → routed `{lang}-dev` `reference.md` (or `architecture/reference/growth.md` for craft). Architecture: `architecture/reference/growth.md` + `learning-log.md` → sparse-promote into craft refs. Assure: `code-review/reference/growth.md` + `learning-log.md` → lens refs. After store edits, reinstall `./agents/skills` globally with the Skills CLI and open a new agent task/session.
-_Avoid_: harvest on every `$dev` implement completion; append-only forever doctrine in the log; growing frozen router checklists for every lesson; loading growth.md on every craft/review session; inventing a parallel runtime route registry outside `dev/SKILL.md`; inventing `$dev` harvest theater
+**Harvest** (skill noun: `harvest`):
+Captures a reusable failure class as a concise project rule or global skill-reference improvement, or records deferred structural debt in `.agents/debt-ledger.md`.
+_Avoid_: raw transcripts, routine-success noise, duplicate rules, or invented capacity budgets
+
+**Delivery Ledger**:
+Markdown handoff from `$dev implement` to `code-review`, containing exact target files, observed verification commands and exit codes, phase commits, active lenses, readiness, and residuals.
+_Avoid_: unaudited “tests pass” claims or rediscovering the entire repository at every handoff
 
 **Expansion law**:
 Seven rules in `architecture/reference/growth.md` before adding a branch. Prefer sparse harvest over new branches; never invent a top-level craft skill when a `refactor-<concern>` branch fits. New language packs / overlays are a **router contract edit** on frozen `dev/SKILL.md` (plus README/CONTEXT index) — not a progressive `reference/runtimes.md`.
@@ -242,7 +250,7 @@ After each Solution/Build plan phase (architecture phase, surgical milestone, or
 Carriers: `architecture` Shared prep (Solution craft) and **`dev`** Shared prep (Build plan/implement). Overlays must not duplicate. Solution/Build implementation plans end each phase with validate → commit (cite this entry; do not fork the format). Handoff states commits made or deferred.
 
 **Handoff**:
-`dev` → `{lang}-dev` / overlay (runtime route). `dev` classify `design` → `architecture` (return ledger → continue `$dev`). Plan-driven `implement` → post-delivery Assure (`code-review` **`findings`**, spawn preferred) before delivery report. If user asked to land and readiness Yes/Conditional → `pull-request` **`open`**. `architecture` / `dev` → `code-review` / `pull-request` for assure/ship. No reverse: craft does not own Product gate. Changelog after merge → `release` **`notes`**.
+`prompt-compiler` → `$dev plan` → `orchestrator` → `$dev implement`. Runtime work routes to `{lang}-dev` / overlays; design routes through `architecture`; Assure routes to `code-review`; landing routes to `pull-request open`; reusable friction routes to `harvest`. No reverse: craft does not own Product gate.
 
 # Ship Skills Domain
 
@@ -255,6 +263,14 @@ _Avoid_: release-ops, ship-notes (use `notes`), absorbing `pull-request` lifecyc
 **Notes** (`release` branch):
 Group Breaking → Features → Fixes → other from `git log` in the ship range. Consumer of history authored during Solution/Build phases.
 _Avoid_: inventing commits; waiting until notes to write history
+
+**Dependabot** (skill noun: `dependabot`):
+Configures `.github/dependabot.yml` or triages a Dependabot PR. CI and conflict repair hand off to `pull-request`; approval and merge remain explicit user actions.
+_Avoid_: silently approving, merging, or rewriting bot commits
+
+**Unblock** (`pull-request` branch):
+Refreshes live state and applies only required branches in order: conflicts → resolve → fix-ci.
+_Avoid_: running a stale all-purpose checklist or auto-merging after blockers clear
 
 **Handoff**:
 Compose with `pull-request` — never absorb PR open/slice/resolve. Phase CC authoring lives in `architecture` / `dev`; at PR open, `pull-request` **`open`** applies the format only if the tree is still dirty.
