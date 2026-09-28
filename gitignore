@@ -23,7 +23,10 @@
 # Logs and databases #
 ######################
 *.log
-*.sql
+# Local DB dumps only — repo migrations (*.sql) should stay trackable
+*.dump.sql
+*-dump.sql
+*-backup.sql
 *.sqlite
 
 # OS generated files #

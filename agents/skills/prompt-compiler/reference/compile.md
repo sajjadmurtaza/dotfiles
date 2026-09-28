@@ -1,30 +1,20 @@
 # compile
 
-Compile raw developer intent into a clean Intent DTO. This branch specifies constraints only. It does not inspect implementation mechanics, mutate application code, or dispatch workers.
+Owns only three intent dimensions:
 
-## Ownership
+1. **Invariants** — unbreakable public contracts, behavior, latency budgets, system guarantees.
+2. **Blast radius** — `allowed_domains` (domains/paths), never guessed files.
+3. **Trade-off posture** — breaking changes forbidden / allowed / ask.
 
-`prompt-compiler compile` owns only:
+`$dev plan` owns discovery, phases, `depends_on`, and delivery (Cursor multi-agent or `orchestrator run`).
 
-1. **Invariants** — unbreakable public contracts, behavior, latency budgets, and system guarantees.
-2. **Blast radius** — domains or paths implementation may affect, expressed as `allowed_domains` rather than guessed files.
-3. **Trade-off posture** — whether breaking changes are forbidden, allowed, or require a decision.
+## Batch
 
-`$dev plan` owns repository discovery, phase decomposition, exact `target_files`, read context, verification commands, and commit messages. `orchestrator run` owns worker dispatch, retries, status, bounds enforcement, commits, rollback, and DAG-level Assure.
-
-## Grill gate
-
-Grill only unresolved intent constraints:
-
-- Which public contracts, behaviors, or latency budgets must remain true?
-- Which domains or paths define the permitted blast radius?
-- Are breaking changes forbidden, allowed, or undecided?
-
-Ask one targeted question at a time. Do not ask for commands, filenames, task ordering, test targets, retry counts, or execution status. Do not infer technical mechanics from intent language.
+Ask the open dimensions in one message: contracts that must stay true, allowed domains, breaking-change posture. Never ask for commands, filenames, ordering, test targets, or retry counts. Never infer mechanics from intent language.
 
 ## Output contract
 
-Emit exactly one file at `.agents/compile/<slug>.yaml`:
+Exactly one file `.agents/compile/<slug>.yaml`:
 
 ```yaml
 intent_spec:
@@ -37,17 +27,11 @@ intent_spec:
       - "<path-or-domain>"
   trade_offs:
     breaking_changes: forbidden # forbidden | allowed | ask
-  circuit_breaker:
-    approved: false
 ```
 
-Requirements:
-
-- Keep the DTO declarative and implementation-free.
-- Do not emit task IDs, task DAGs, dependencies, `target_files`, `read_context`, commands, gates, commit messages, statuses, attempts, or retry limits.
-- Do not encode unresolved prose outside the three owned intent dimensions. Grill until the DTO is valid or halt without emitting it.
-- Leave `circuit_breaker.approved` false at emission. Approval is explicit user consent for the destructive rollback policy, never inferred by the compiler.
+- Forbidden: task IDs/DAGs, dependencies, `target_files`, `read_context`, commands, gates, commit messages, statuses, attempts, retry limits, prose outside the three dimensions.
+- Unknown dimension → the batch asks; do not emit a guess.
 
 ## Halt and handoff
 
-Halt immediately after emission. Report the Intent DTO path and hand it to `$dev plan`. Do not dispatch workers, invoke `$dev implement`, start an execution loop, or mutate application code.
+Report the path and hand it to `$dev plan` in the same turn. Do not wait. Never implement application code here.

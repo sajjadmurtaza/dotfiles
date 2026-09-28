@@ -1,90 +1,83 @@
 ---
 name: dev
-description: >
-  Build-domain router for implementation plans and code changes — classify,
-  language/overlay route, phase commits, validation honesty, API truth.
-  Use when the ask is implement, fix, feature, implementation plan, Cursor plan
-  mode, surgical, or design-shaped coding work. Routes to {lang}-dev / overlays
-  (multi-load from touched-file evidence); design → architecture; plan mode →
-  reference/plan-pipeline.md quality gates; assure/ship → code-review /
-  pull-request. Never answers "should we build X?".
+description: >-
+  Build-domain router for implementation plans and code changes: classify, route
+  language packs and overlays, phase commits, validation, API truth. Use for
+  implement, fix, feature, change the code, implementation plan, Cursor plan
+  mode, phased plan, surgical or design-shaped coding; also optimize, hot path,
+  throughput, latency, allocate, profile, benchmark, Apple Silicon / SIMD as
+  coding work.
 ---
 
 # Dev
 
-Single Build entry (and Solution-touch for implementation plans). Language packs and overlays stay dedicated — load them; do not paste their bodies. Craft lives in `architecture`. Product scope stays in `product-owner`.
+Single Build entry. Load packs/overlays by name; never paste their bodies. Craft lives in `architecture`; product scope in `product-owner`. Repo `AGENTS.md` overrides the defaults here. Vocabulary: [`../CONTEXT.md`](../CONTEXT.md).
 
 ## Pick branch
 
-Never ask the user to pick the branch when signals are clear.
+Never ask the user to pick when signals are clear.
 
-| Branch      | When                                                                              | Job                                                                                                                                 |
-| ----------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `plan`      | Writing / refining an implementation plan (Cursor plan mode or explicit plan ask) | Phase 0 Gate: `view_file` on [`reference/plan-pipeline.md`](reference/plan-pipeline.md) — **no code** until user approves           |
-| `implement` | Default when coding                                                               | Shared prep → Classify (Shift-Left `architecture` if design) → load routed `{lang}-dev` (+ overlay & reference) → execute → handoff |
-
-| Signal                                        | Branch                 |
-| --------------------------------------------- | ---------------------- |
-| implementation plan, plan mode, phased plan   | `plan`                 |
-| run or resume `.agents/plan/<slug>.md`         | stop — `orchestrator`  |
-| implement, fix, feature, change the code      | `implement`            |
-| “should we build X?”                          | stop — `product-owner` |
-| assure / findings / tests review / merge prep | stop — `code-review`    |
-| open / slice / comment a PR                   | stop — `pull-request`  |
+| Signal                                             | Branch                                                                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| implementation plan, plan mode, phased plan        | `plan` — load [`reference/plan-pipeline.md`](reference/plan-pipeline.md); the planning session writes no code |
+| implement, fix, feature, change the code (default) | `implement`                                                                                                   |
+| "should we build X?"                               | stop → `product-owner`                                                                                        |
+| assure / findings / tests review / merge prep      | stop → `code-review`                                                                                           |
+| open / slice / comment a PR                        | stop → `pull-request`                                                                                         |
 
 ## Shared prep
 
-1. Read `AGENTS.md` when present; prefer repo law over defaults here.
-2. Evidence before claims: `rg`, file reads, in-tree call sites. Label Strong / Worth / Speculative when surveying.
-3. **Observability cue:** if the ask cites **APM / traces, error tracking, or logging** links/IDs (or equivalent incident signals), discover and use the **matching observability MCP** when available; fold findings into evidence before coding. Do not hardcode a vendor. Do not invent a full observability skill. If no observability MCP is available, say so and continue with ask text + codebase evidence. Vendor-specific tool recipes stay out of `$dev`.
-4. **Security cue:** when the ask/change touches authn/authz, tenancy, PII/PHI, secrets, exports, webhooks, raw SQL, or privileged ops, prefer `code-review` **`security`** on the post-delivery Assure pass (and co-load during implement when clearly needed). Dense Rails Security Trigger Matrix stays in the overlay / `AGENTS.md` — this cue is light only.
-5. **Classify (Shift-Left Architecture Enforcement):** `surgical` | `design` | `review-hand-off`.
-   - Load `architecture/SKILL.md` on every `implement` so its core axioms constrain even surgical work. Load branch references only when `design` is earned.
-   - Earn `design` when any of the **core six**: dual ownership / shallow modules / primitive obsession across boundaries / structural cleanup ask / measured perf / type-driven refactor.
-   - **Gated Rule:** When `design` is earned, DO NOT edit code immediately. You MUST invoke `architecture` (load its axioms and matched references) and document the structural/seam decisions in the plan or milestone ledger before writing code.
-   - Language packs may append a short “also earn when…” list only — do not restate the core six there as a second SoT.
-   - `review-hand-off` → stop and continue with `code-review` (do not implement under this skill).
-6. **Route runtime** (load dedicated skill(s) + references; do not paste bodies). Prefer **files the ask/change actually touches** — not repo-wide extension presence.
+1. **AGENTS.md load** ([`../CONTEXT.md`](../CONTEXT.md)): already injected; nearest file wins; do not re-read or paste unless citing a line. Label survey claims Strong / Worth / Speculative.
+2. Observability / security cues: [`../CONTEXT.md`](../CONTEXT.md). Security cue → `security` lens on Assure; co-load during implement when clearly needed. Rails matrix stays in the overlay / `AGENTS.md`. No vendor recipes.
+3. **Classify:** `surgical` | `design` | `review-hand-off`.
+   - Load [`architecture/reference/axioms.md`](../architecture/reference/axioms.md) on **every** `implement`, surgical included. Load `architecture` `SKILL.md` + matched references only when `design` is earned.
+   - Earn `design` on the core six: dual ownership / shallow modules / primitive obsession across boundaries / structural cleanup ask / measured perf / type-driven refactor; also named GoF / which-pattern asks (`design-patterns`). Ambiguous → prefer `design`.
+   - **Plan inheritance:** `orchestrated: true` (a phase of `.agents/plan/<slug>.md`) → inherit its classification and architecture decisions; no second pass; axioms stay active.
+   - **Gated:** `design` earned without inheritance → invoke `architecture` and document seam decisions in the plan or milestone ledger **before** writing code.
+   - Packs may only append "also earn when…" lists.
+   - `review-hand-off` → stop → `code-review`.
+4. **Route by touched files** (not repo-wide presence); multi-load OK; validate per surface; clarify only when signals are absent or contradictory.
 
-| Touched evidence                                                          | Load                                  |
-| ------------------------------------------------------------------------- | ------------------------------------- |
-| `.rb` / Ruby gem or plain Ruby                                            | `ruby-dev` (and `reference.md`)       |
-| Rails-shaped (controllers, policies, serializers, workers, migrations, …) | `ruby-dev` + `ruby-on-rails-dev`      |
-| `.rs`                                                                     | `rust-dev` (and `reference.md`)       |
-| `.swift` (non-UI)                                                         | `swift-dev`                           |
-| SwiftUI / WidgetKit / AppKit UI                                           | `swift-dev` + `swiftui-dev`           |
-| `.ts` / `.tsx` / `.js` / `.jsx`                                           | `typescript-dev` (and `reference.md`) |
+   | Touched                                                                   | Load                                |
+   | ------------------------------------------------------------------------- | ----------------------------------- |
+   | `.rb` / gem / plain Ruby                                                  | `ruby-dev` (+ `reference.md`)       |
+   | Rails-shaped (controllers, policies, serializers, workers, migrations, …) | `ruby-dev` + `ruby-on-rails-dev`    |
+   | `.rs`                                                                     | `rust-dev` (+ `reference.md`)       |
+   | `.swift` (non-UI)                                                         | `swift-dev`                         |
+   | SwiftUI / WidgetKit / AppKit UI                                           | `swift-dev` + `swiftui-dev`         |
+   | `.ts` / `.tsx` / `.js` / `.jsx`                                           | `typescript-dev` (+ `reference.md`) |
 
-**Multi-load OK** when touched files span multiple rows — one phase plan may name several runtimes; validate per surface. Clarify only when file signals are absent or contradictory (or follow repo `AGENTS.md`).
-
-7. Shared surgical laws: smallest safe change; preserve behavior unless intentional break; focused test when cheap; **one-surface** incident rule (drive-by edits on a second surface travel with the revert); no silent craft inline — when `design` is earned, load `architecture`.
-8. **Compat ask:** detect internal-only vs stable public contract. If a break may hit a surface treated as stable and permission is unclear, **ask** before shipping. No silent shim theater; no silent breaks on stable surfaces. Packs may name what counts as stable in that ecosystem — not a second ask ritual.
-9. **No destructive git:** never `push --force`, hard reset, or other irreversible git unless the user explicitly asks.
-10. **API truth (all runtimes):** Do not invent stdlib/framework/crate APIs from memory when the claim is material. Ladder: repo docs + in-tree usage → **Dash MCP** `user-dash-api` → **Context7 if available** → language secondary from the routed pack → say unknown. **Dash recipe:** discover tools on `user-dash-api` first; if discovery fails, treat Dash as unavailable and continue the ladder — do not assume tool names. When tools are present: `search_documentation` (query + docset) → take `load_url` → `load_documentation_page`. Prefer human docset names from the routed pack; use listed IDs only if present. **Context7:** discover-if-present (same fallthrough honesty). **Warn once on the first material API fallthrough** in the session (when a material claim cannot be verified via repo docs, Dash, Context7, or another API-doc MCP) that providing an API-doc tool (Dash and/or Context7) makes agents much more efficient — then continue with repo docs + pack secondary + unknown honesty. Do **not** warn at `$dev` load. Do not repeat the warning in the same session. Do not silently invent APIs.
-11. Validation law: repo-native entrypoints → narrow→broad → exit-0 honesty → validate per phase. Never claim green without observing exit status 0 for commands you cite.
-12. **Phase commits:** detect the default branch early (from `AGENTS.md` / remote HEAD). **Not on the default branch:** after each plan phase or surgical milestone, validate → ≥1 Conventional Commit with rationale/intent body before the next phase (cite [`CONTEXT.md`](../CONTEXT.md)). **On the default branch:** ask the user early whether to author phase commits here or defer; do not silently commit on main/master. Format: [`CONTEXT.md`](../CONTEXT.md). Inspect `git log` / `git show` when needed. `release` **`notes`** consumes history later — do not defer authoring to notes. Overlays never duplicate this carrier. Handoff must state commits made or deferred.
-13. Review routing: prefer `code-review` **`findings`** (+ warranted lenses) when that is the ask; Rails security matrix stays in the overlay / `AGENTS.md`.
+5. Tests / dual paths / acceptance → load [`reference/surgical-laws.md`](reference/surgical-laws.md).
+6. **Compat ask:** classify internal vs stable public. Possibly-breaking change to a stable surface with unclear permission → ask first. No silent shims, no silent breaks. Packs only name what counts as stable.
+7. **No destructive git:** never `push --force`, hard reset, or other irreversible git unless explicitly asked.
+8. Material API claim → load [`reference/api-truth.md`](reference/api-truth.md).
+9. **Validation:** repo-native entrypoints, narrow → broad, per phase. Never claim green without an observed exit 0 for each cited command.
+10. Committing → load [`reference/phase-commits.md`](reference/phase-commits.md).
 
 ## Branch reference
 
-- **`plan`** — Phase 0 Gate: Execute `view_file` on [`reference/plan-pipeline.md`](reference/plan-pipeline.md) first; satisfy its ready checklist before any code is generated.
-- **`implement`** — Shared prep → Classify (Shift-Left `architecture` if design) → load routed `{lang}-dev` (+ overlay & reference) → execute surgical or post-`architecture` decisions with language validation → post-delivery Assure → handoff.
+- **`plan`** — load [`reference/plan-pipeline.md`](reference/plan-pipeline.md) first; satisfy its ready checklist before any code.
+- **`implement`** — Shared prep → classify (axioms; `architecture` if design) → load routed `{lang}-dev` (+ overlay, reference) → execute → post-delivery Assure → handoff.
 
 ## Handoff
 
-Build path: `prompt-compiler` → `$dev plan` → `orchestrator` → `$dev implement` ⇄ `architecture` → `code-review` → `pull-request` (see [`README.md`](../README.md) Compose).
+Path: `$dev` ⇄ `architecture` → `code-review` → `pull-request`; never reverse. Emit the **Delivery Ledger** ([`../CONTEXT.md`](../CONTEXT.md)) at delivery and pass it to `code-review`; state phase commits made or deferred.
 
-- `design` → `architecture` (branch pick inside); then continue implement via this skill → routed `{lang}-dev` / overlay.
-- Emit the Delivery Ledger defined in [`CONTEXT.md`](../CONTEXT.md) before Assure so verification, target files, commits, active lenses, readiness, and residuals cross the handoff without rediscovery.
-- **Post-delivery Assure:** before reporting any non-trivial delivery, run `code-review` `findings` with warranted lenses. Prefer a fresh agent for multi-phase or security-sensitive work; a fresh in-session pass is sufficient for a small single-surface change. Trivial docs, comment, typo, or one-line configuration changes may skip only when the reason is stated. An `orchestrated: true` worker emits the ledger but skips per-phase Assure because `orchestrator` runs one cumulative review. If the user asked to land and readiness is Yes/Conditional → continue with `pull-request` **`open`**.
-- Assure / ship → `code-review` / `pull-request` — never reverse.
-- Product scope → `product-owner`. Never answer “should we build X?” here.
-- Harvest: only when pain appears twice or the user asked — stage → promote/drop per `architecture/reference/growth.md` (or lang `reference.md` for language-only). Not an append-forever log. No `$dev` harvest theater on every implement.
-- Phase commits: state commits made or deferred (especially when work started on the default branch).
+- `design` → `architecture` (branch pick inside), then continue implement here.
+- **Post-delivery Assure** (every `implement` delivery, plan-driven or surgical), before reporting delivery:
+  - Prefer spawning a new agent running `code-review` `findings` (+ warranted lenses; `security` lens when the cue matched) with the Delivery Ledger.
+  - Small single-surface surgical → fresh in-session pass OK; spawn preferred for plan-driven, multi-phase, or security-cue work.
+  - Trivial diff (docs-only, comment/typo, single-line config) may skip — state skip + reason; never silent.
+  - `orchestrated: true` → emit the ledger, skip `findings` (the runner runs one DAG-level pass).
+  - `quality` only on explicit merge-prep / boy-scout ask or already-authorized P0/P1 fixes; never from bare "review".
+  - No subagent → fresh in-session pass (reload the skill; implementer self-check is not the review).
+  - Report delivery only after the pass returns; no ship-ready claim without it. Land ask + readiness Yes/Conditional → `pull-request` `open`.
+- Harvest → `harvest` (`distill` mantras | `debt` → `.agents/debt-ledger.md`) when pain repeats, a fix was non-obvious, or the user asked — not on every implement.
+- Forward doc (post-Assure, Yes/Conditional): capture non-obvious maintenance in repo `AGENTS.md`; skip if self-documenting and say so.
 
 ## Completion criteria
 
-| Branch      | Done when                                                                                                                                                                                                                                                                                                                                                  |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `plan`      | [`reference/plan-pipeline.md`](reference/plan-pipeline.md) ready checklist satisfied; no code written before plan approval                                                                                                                                                                                                                                 |
-| `implement` | Architecture axioms loaded; classification stated; design decisions documented when earned; compat decision stated or user was asked; runtime validation observed; Delivery Ledger emitted; phase commits made or deferred; Assure completed or a trivial-diff skip stated |
+| Branch      | Done when                                                                                                                                                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `plan`      | Ready checklist satisfied; planning session wrote no code; delivery offer shown, or skipped because the runner was already named                                                                                                                      |
+| `implement` | Classification stated with axioms loaded (+ `architecture` decisions documented if design); compat decided or asked; pack/overlay handoff fields; exit-0 honesty; commits made or deferred; Assure done or trivial skip stated before delivery report |

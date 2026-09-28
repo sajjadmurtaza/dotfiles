@@ -1,6 +1,7 @@
-# The following lines were added by Docker Desktop to add commands to your PATH.
-export PATH="$PATH:/Users/sajjad/.docker/bin"
-# End of Docker Desktop section.
+# Docker Desktop installs user-scoped CLI shims here on macOS.
+if [ -d "$HOME/.docker/bin" ]; then
+  export PATH="$PATH:$HOME/.docker/bin"
+fi
 
 # vim:fileencoding=utf-8:ft=conf:foldmethod=marker
 

@@ -147,6 +147,19 @@ class VerifierTest < Minitest::Test
     end
   end
 
+  def test_allows_use_config_only_without_identity
+    Dir.mktmpdir do |dir|
+      prepare_verifier_root(dir)
+      File.write(File.join(dir, "gitconfig"), "[user]\n  useConfigOnly = true\n")
+
+      output = StringIO.new
+      verifier = Dotfiles::Verifier.new(root: dir, shell: FakeShell.new, output: output)
+
+      assert_equal(0, verifier.run)
+      refute_includes(output.string, "gitconfig contains a tracked user identity")
+    end
+  end
+
   private
 
   def prepare_verifier_root(dir)

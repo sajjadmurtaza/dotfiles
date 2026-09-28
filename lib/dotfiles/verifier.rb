@@ -72,7 +72,7 @@ module Dotfiles
       @failures << "tracked personalization remains: #{match.sub("#{@root}/", '')}" if match
 
       gitconfig = File.join(@root, "gitconfig")
-      return unless File.file?(gitconfig) && File.read(gitconfig).match?(/^\[user\]$/)
+      return unless File.file?(gitconfig) && File.read(gitconfig).match?(/^\s*(?:name|email|signingkey)\s*=/i)
 
       @failures << "gitconfig contains a tracked user identity; use ~/.gitconfig.local"
     end

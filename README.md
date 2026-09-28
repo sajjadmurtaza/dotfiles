@@ -157,6 +157,8 @@ npx skills add ./agents/skills \
 
 This installs the complete first-party pipeline under `~/.agents/skills/`, including `architecture`, which `dev` uses for design judgment. Open a new Codex task, Claude Code session, or Cursor Agent chat after installation. A project-local install is optional and should be committed only when the team wants those skills to travel with that repository; see the [cross-agent guide](docs/ai-agents.md#project-local-optional).
 
+The installed entrypoints stay small. Detailed review, architecture, product, and delivery procedures are loaded from focused references only when the selected branch or risk requires them, keeping routine requests token-efficient.
+
 > [!IMPORTANT]
 > **Install globally once per machine.** You do not need to add these skills to every application repository.
 
@@ -171,6 +173,26 @@ npx skills list -g
 
 > [!TIP]
 > `npx skills update -g -y` refreshes installed skills. When the repository adds a new skill, rerun the full `npx skills add ./agents/skills ...` command above so it is discovered. Then open a new agent session.
+
+To refresh directly from a local checkout—including newly added skills—pull, verify, and reinstall the complete store:
+
+```sh
+git pull --ff-only
+make verify
+npx skills add ./agents/skills \
+  -g --copy \
+  -a codex -a claude-code -a cursor \
+  -y
+npx skills list -g
+```
+
+Before publishing changes, keep commit identity scoped to this repository instead of changing every Git repository on the machine:
+
+```sh
+git config --local user.name "Your Name"
+git config --local user.email "you@example.com"
+git config --local --get-regexp '^user\.(name|email)$'
+```
 
 | Agent | Invoke | Discover |
 | --- | --- | --- |
@@ -226,6 +248,7 @@ Ruby and JavaScript linters belong in each project's `Gemfile` or `package.json`
 | `dotfiles benchmark [runs]` | report median interactive Zsh startup time |
 | `dotfiles update` | fetch, preview commits, fast-forward, then safely refresh links |
 | `skill doctor` | inspect canonical agent skills for local drift |
+| `skill prune` | remove orphan skill links after a source reference is deleted |
 | `clipcopy` / `clippaste` | portable macOS/Wayland/X11 clipboard pipes |
 
 Git helpers stay conservative. `gnew <branch>` preserves dirty work via a named stash and starts from the remote default branch; `gpf` uses `--force-with-lease`. Worktree creation and deletion remain explicit—see [the worktree guide](docs/git-worktrees.md).

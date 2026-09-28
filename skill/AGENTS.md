@@ -2,9 +2,9 @@
 
 ## Purpose
 
-`skill/` owns the implementation and tests for the `skill` command used to manage this repository's dotfiles skill store (`agents/skills`).
+`skill/` owns the implementation and tests for the `skill` command used to manage `<dotfiles-root>/agents/skills`.
 
-Install first-party skills into agents with [`rcup`](https://github.com/thoughtbot/rcm) (repo `agents/skills/<name>/` → `~/.agents/skills/<name>/`). This CLI handles store hygiene only: `list`, `doctor`, `backfill`, `promote`, and `rename`.
+Install first-party skills with the Skills CLI (repo `agents/skills/<name>/` → `~/.agents/skills/<name>/`). This local CLI handles store hygiene only: `list`, `doctor`, `prune`, `backfill`, `promote`, and `rename`.
 
 ## Key Decision
 
@@ -35,24 +35,25 @@ Do not optimize for:
 - external services
 - non-stdlib Ruby dependencies
 - broad cross-platform abstractions unless they are required by an actual use case
-- agent install management (use `rcup` / topgrade instead)
+- agent install management beyond orphan prune (use `npx skills` instead)
 - third-party skill install (use manual `npx skills` for optional packs)
 
 ## Operating Constraints
 
 - Ruby must stay compatible with macOS system Ruby 2.6.
 - Prefer stdlib only.
-- `scripts/skill` must remain a tiny launcher.
+- `scripts/skill` must remain a tiny launcher. Keep `require_relative` so the rcm `~/.scripts/skill` symlink still loads `src/cli.rb`.
 - Hidden directories in the store are not user skills and must stay excluded from `list` and related workflows.
 - The tool manages local directories in the dotfiles store; it should fail closed rather than overwrite unexpected paths.
 - Behavior should remain understandable from CLI output alone. Errors should be explicit and actionable.
-- Do not create agent install links. Print an `rcup` hint after promote/rename/backfill.
-- `Skill::Classifier` owns status and drift; doctor and backfill must not reimplement those rules.
+- Do not create agent install links. Print the full Skills CLI reinstall command after promote/rename/backfill.
+- `prune` only removes store-backed links under `~/.agents/skills` whose source is gone; it never creates links.
+- `Skill::Classifier` owns status, drift, and orphan detection; doctor/backfill/prune must not reimplement those rules.
 
 ## Canonical Paths
 
 - Store: `agents/skills/` at the dotfiles root
-- Agent install: `~/.agents/skills/<name>/` via `rcup` (file-level links from the store)
+- Agent install: `~/.agents/skills/<name>/` via the Skills CLI
 - Project promote source: `<project>/.agents/skills/` only (`.codex/skills/` is deprecated and rejected)
 - Main implementation: `skill/src/cli.rb`
 - Classifier: `skill/src/skill/classifier.rb`
@@ -89,5 +90,5 @@ When reviewing changes here, prioritize:
 - argument parsing regressions
 - drift between README, tests, and executable behavior
 - accidental reintroduction of `skill sync` or `.codex/skills` promote workflows
-- dual ownership of status/drift outside `Skill::Classifier`
-- doctor exit-on-drift (`1` when any `drift` row is printed)
+- dual ownership of status/drift/orphan outside `Skill::Classifier`
+- doctor exit-on-failure (`1` when any `drift` or `orphan` row is printed)

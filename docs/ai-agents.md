@@ -2,6 +2,8 @@
 
 The repository keeps one portable skill source in `agents/skills/`. The same `SKILL.md` workflow is consumed by Codex, Claude Code, and Cursor; there are no divergent copies to maintain.
 
+Each entrypoint contains only routing and shared safety rules. Branch-specific procedures live in references that load on demand, so a routine task does not pay the context cost of the entire pipeline.
+
 ## Install
 
 ### Global — recommended for personal use
@@ -38,6 +40,20 @@ npx skills update code-review dev ruby-dev ruby-on-rails-dev pull-request -g -y
 
 > [!TIP]
 > `npx skills update` refreshes installed skills. Rerun the full `npx skills add ./agents/skills ... --copy` command after the store adds a new skill or when testing unpublished local edits. Restart the agent or open a new task/session afterward.
+
+For a checked-out copy, the complete refresh sequence is:
+
+```sh
+git pull --ff-only
+make verify
+npx skills add ./agents/skills \
+  -g --copy \
+  -a codex -a claude-code -a cursor \
+  -y
+npx skills list -g
+```
+
+The `--copy` option makes the global installation independent of the checkout. Repeat the command after local skill edits; open a new task or session so the client reloads its catalog.
 
 ### Project-local — optional
 

@@ -4,6 +4,8 @@
 
 This is a portable skill store for product and engineering work: domain routers (Build entry: `dev`), Solution craft (`architecture`), and thin language adapters/overlays under `agents/skills/`. Vocabulary: [`CONTEXT.md`](CONTEXT.md).
 
+Entrypoints stay concise. Detailed procedures live in focused references and load only when the selected branch or risk requires them, reducing routine context use without weakening safety gates.
+
 ## Install
 
 ### Global — recommended for personal use
@@ -199,7 +201,8 @@ Git-tracked trees under `agents/skills/<name>/` are the source of truth. Install
 | Command                    | Role                                                                  |
 | -------------------------- | --------------------------------------------------------------------- |
 | `skill list`               | List non-hidden skills in the store                                   |
-| `skill doctor`             | Report `ok` / `drift` / `home-only` / `broken` for store vs install   |
+| `skill doctor`             | Report `ok` / `drift` / `home-only` / `broken` / `orphan`             |
+| `skill prune`              | Remove orphan links whose source file no longer exists                 |
 | `skill backfill <name>`    | Copy drifted real files from `~/.agents/skills/<name>` into the store |
 | `skill promote <name>`     | Move `<project>/.agents/skills/<name>` into the store                 |
 | `skill rename <old> <new>` | Rename in the store                                                   |

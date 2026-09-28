@@ -1,100 +1,45 @@
 # One-on-One
 
-Turn raw 1:1 notes into a small, speaker-aware summary that is easy to scan later.
+Raw 1:1 notes (markdown, blockquotes, shorthand, `Q:`/`A:`/`q:` markers) → post-meeting summary the note taker sends to the other person so both can verify what was said.
 
-## When to Use
+## Output
 
-Use this branch when the user wants a compact summary distilled from:
+- Two-person voice: **I** = note taker, **You** = other person; both must recognize themselves.
+- One flat bullet list, one bullet per question/topic, no cap, no grouped sections or paragraphs. Completeness beats brevity — drop nothing substantive; merge only fragments that restate the same point.
+- Bullets typically open with the note taker's action ("I asked about X.", "I showed Y.", "I offered Z.") then the response. Keep the note taker's own remarks, offers, and asks as "I …".
+- Other person: "You: …" for multi-part answers; woven prose ("You'll …", "You want …", "You think …") for single points.
+- Keep unresolved questions, concerns, commitments, and process friction inline. No editorializing, invented certainty, or fabricated takeaways.
+- Fix shorthand and typos in ordinary words only ("mentatilty" → "mentality"). Carry proper nouns, ticket IDs, and codenames verbatim — never expand, explain, or "correct" them.
 
-- raw one-on-one notes
-- markdown notes with blockquotes
-- shorthand or fragmented note-taking
-- `Q:` / `A:` markers
-- speaker-directed notes where who said what matters
+## Steno notation
 
-## Output Rules
+- Any line whose marker chain contains `>` → other person (**You**). Lines without `>` — including `-` sub-points indented under their answers — → note taker (**I**).
+- `> Q:` = other person asked; bare `Q:`/`q:` = note taker asked. `A:` = note taker's answer; `> A:` = other person's.
+- Indented follow-ups belong to the item above unless context clearly breaks.
+- Genuinely unclear attribution → "we discussed X". Wrong attribution in a shared note is worse than vague.
 
-- Default to returning only the final summary.
-- Keep the result small and scannable, usually `4-6` bullets total.
-- Default to one flat bullet list rather than grouped sections.
-- Do not use `Asked`, `Said`, `Takeaways`, `you`, or `they` labels by default.
-- Preserve speaker attribution when it changes meaning.
-- Preserve direction indirectly through phrasing when needed, for example by framing a point as a question, concern, preference, or observation.
-- Lightly clean up shorthand, fragments, and typos into readable bullets.
-- Do not rewrite the notes into paragraphs by default.
-- Do not invent certainty when attribution or meaning is ambiguous.
-
-## Steno Notation
-
-Interpret the raw markdown using these direction rules:
-
-- `>` means the other person said or asked the content.
-- unquoted lines are the note taker's side unless the text clearly indicates otherwise.
-- `Q:` marks a question.
-- `A:` marks an answer.
-- quoting overrides bare `Q:` / `A:` direction, so `> Q:` means the other person asked the question.
-- indented follow-up lines belong to the item immediately above unless the notes clearly break context.
-- shorthand, fragments, and misspellings should be normalized lightly for readability without changing intent.
-- if a line is too ambiguous to attribute confidently, keep the wording conservative rather than forcing speaker certainty.
-
-## Distillation Standard
-
-- Prefer the few points most useful for recalling the conversation later.
-- Keep both content and attribution compact.
-- Merge repeated fragments into one clean bullet when they clearly describe the same point.
-- Preserve unresolved questions, concerns, or process friction when they appear central.
-- Summarize questions as open points, concerns, or topics to clarify.
-- Summarize statements as observations, preferences, constraints, or takeaways.
-- If no clear takeaway exists, do not fabricate one.
-
-## Examples
+## Example
 
 Input:
 
 ```markdown
-> Q: how should access requests work once the team grows?
-> what happens if the approver is away?
+Q: noshow on quarterly leadership sync?
 
-Q: Where does delivery usually slow down the most?
+> took part in the beginning
+> catched up via meeting notes
+> Q: project-northstar - we had team meeting last week to align on approach. are next steps clear?
+> is clear.
+> work started.
+> sync with alex
 
-> usually around incidents / response quality matters a lot
-> test environments are close enough to miss issues until later stages
-> differences between review and staging slow things down
-> dependencies across services make rollout coordination harder
-> release alignment takes time
+- tickets are high level, align before work early i.e. in deep dive
+- great to see stacked PRs of the PRJ-204 already up
+  > AI topic: thinks best is tool-alpha right now, tool-beta. switched thru some tools.
+  > I replied it's great example for info sharing, accessibility needs some work
 ```
 
 Output:
 
-- Questions around how access requests should work as the team grows, including fallback when an approver is unavailable.
-- Delivery seems to slow down most around incidents and response quality.
-- Incident handling quality has a major effect on operational speed.
-- Differences between review and staging make issues harder to catch early and slow delivery.
-- Cross-service dependencies and release alignment add coordination overhead.
-
-Input:
-
-```markdown
-> worried about handoffs between product / eng
-> unclear owner once incident spans teams
-> Q: where is the biggest confusion?
-> usually after first escalation
-```
-
-Output:
-
-- Biggest confusion appears during cross-team incidents after the first escalation.
-- Handoffs between product and engineering feel weak.
-- Ownership often becomes unclear once an incident spans teams.
-
-Input:
-
-```markdown
-A: prefers smaller rollouts
-A: wants clearer success signal
-```
-
-Output:
-
-- Prefers smaller rollouts.
-- Wants a clearer signal for rollout success.
+- I asked about the no-show at the quarterly leadership sync. You took part at the beginning and caught up via meeting notes.
+- I asked whether next steps on project-northstar are clear after last week's team alignment. You: it's clear, work has started, and you'll sync with Alex. I noted that tickets are high-level, so align before work starts — e.g. in a deep dive. Great to see stacked PRs for PRJ-204 already up.
+- You on AI: tool-alpha feels best right now, then tool-beta; you've switched through some tools. I replied that it's a great example of info sharing; accessibility still needs work.

@@ -10,7 +10,6 @@
 	prune = true
 [user]
 	useConfigOnly = true
-	signingkey = 3626C7C89949E04449B48BC3BA166547876B9BEA
 [init]
 	defaultBranch = main
 [pull]
@@ -23,7 +22,7 @@
 	enabled = true
 # Path identity (later includeIf wins when overlapping).
 #   everywhere              -> ~/.gitconfig.local   (personal)
-#   ~/work/                 -> ~/.gitconfig.work    (Caspar)
+#   ~/work/                 -> ~/.gitconfig.work    (work)
 #   ~/work/others|other/    -> ~/.gitconfig.personal
 #   ~/ai-workspace/         -> ~/.gitconfig.personal
 [include]

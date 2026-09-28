@@ -1,4 +1,4 @@
 interface:
-  display_name: "Code Review"
-  short_description: "Focused production-readiness and pull request review."
-  default_prompt: "Use $code-review to review this change for production readiness, loading only the relevant test, performance, security, and legacy lenses."
+  display_name: "Review"
+  short_description: "Run a focused multi-lens review, optionally publishing a PR COMMENT review."
+  default_prompt: "Use $code-review to review this change: finish baseline plus only the relevant tests, perf, security, and legacy lenses; do not ask me to choose a template."

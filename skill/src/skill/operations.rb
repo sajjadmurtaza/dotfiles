@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "find"
 
 require_relative "classifier"
 require_relative "error"
@@ -14,7 +15,7 @@ module Skill
     BROKEN_BACKFILL_ERROR = "refusing to backfill broken agent path: %<name>s"
     NO_DRIFT_BACKFILL_ERROR = "no real-file drift for %<name>s"
     TYPE_CLASH_BACKFILL_ERROR = "refusing to backfill over non-file store path: %<path>s"
-    RCUP_HINT = "run rcup (or wait for topgrade) to install into ~/.agents/skills"
+    INSTALL_HINT = "run npx skills add ./agents/skills -g --copy -a codex -a claude-code -a cursor -y"
 
     def initialize(paths:, shell_ui:)
       @paths = paths
@@ -38,13 +39,37 @@ module Skill
       return if entries.empty?
 
       width = [entries.map { |name, _status| name.length }.max, 24].max
-      drifted = false
+      failed = false
       entries.each do |name, status|
         puts(format("%-#{width}s  %s", name, status))
-        drifted = true if status == "drift"
+        failed = true if %w[drift orphan].include?(status)
       end
 
-      raise ExitError.new(status: 1) if drifted
+      raise ExitError.new(status: 1) if failed
+    end
+
+    def prune_skills
+      @paths.ensure_store!
+      removed = 0
+
+      @paths.agents_skill_names.each do |name|
+        orphans = classifier.orphan_paths(name)
+        next if orphans.empty?
+
+        agent = @paths.agents_skill_path(name)
+        orphans.each do |relative|
+          File.unlink(File.join(agent, relative))
+          puts("#{name}/#{relative}")
+          removed += 1
+        end
+        remove_empty_directories(agent)
+      end
+
+      if removed.zero?
+        @shell_ui.note("no orphans to prune")
+      else
+        @shell_ui.note("pruned #{removed} orphan links")
+      end
     end
 
     def backfill_skill(name)
@@ -79,7 +104,7 @@ module Skill
       end
 
       @shell_ui.note("backfilled #{name} (#{drifted.length} files)")
-      @shell_ui.note(RCUP_HINT)
+      @shell_ui.note(INSTALL_HINT)
     end
 
     def promote_skill(name)
@@ -101,7 +126,7 @@ module Skill
 
       FileUtils.mv(source, target)
       @shell_ui.note("promoted #{name} -> #{target}")
-      @shell_ui.note(RCUP_HINT)
+      @shell_ui.note(INSTALL_HINT)
     end
 
     def rename_skill(old_name, new_name)
@@ -120,13 +145,31 @@ module Skill
 
       FileUtils.mv(old_target, new_target)
       @shell_ui.note("renamed #{old_name} -> #{new_name}")
-      @shell_ui.note(RCUP_HINT)
+      @shell_ui.note(INSTALL_HINT)
     end
 
     private
 
     def classifier
       @classifier ||= Classifier.new(paths: @paths)
+    end
+
+    def remove_empty_directories(root)
+      return unless File.directory?(root)
+
+      directories = []
+      Find.find(root) do |path|
+        directories << path if File.directory?(path)
+      end
+
+      directories.sort_by(&:length).reverse_each do |path|
+        next unless File.directory?(path)
+        next unless Dir.children(path).empty?
+
+        Dir.rmdir(path)
+      rescue Errno::ENOTEMPTY, Errno::ENOENT
+        # Another process or a non-empty residual; leave in place.
+      end
     end
   end
 end
