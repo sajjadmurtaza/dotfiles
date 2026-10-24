@@ -20,7 +20,7 @@ description: >-
 
 ## Branch reference
 
-Load exactly one and follow it through completion:
+Load exactly one:
 
 - **`one-on-one`** → [`reference/one-on-one.md`](reference/one-on-one.md)
 - **`slack-message`** → [`reference/slack-message.md`](reference/slack-message.md)
@@ -31,13 +31,8 @@ Every branch returns only the final artifact; add improvement notes only when as
 
 ## Handoff
 
-README, runbook, or product doc rather than a message → stop → `docs` **`editor`** (never reverse; no long-form docs from this skill).
+README, runbook, or product doc rather than a message → stop → `docs` **`editor`** (never reverse).
 
 ## Completion criteria
 
-| Branch             | Done when                                                                                             |
-| ------------------ | ----------------------------------------------------------------------------------------------------- |
-| `one-on-one`       | Two-person dialogue summary (I/You voice), one bullet per topic, shareable with the other participant |
-| `slack-message`    | Slack-ready internal message returned; sensitive framing applied when relevant                        |
-| `project-update`   | Single comparable status line returned in required format (≤200 chars unless user asks otherwise)     |
-| `external-message` | External message returned with no internal jargon, no unconfirmed commitments, legal-safe tone        |
+Per-branch Done when / output contract in the matched reference.

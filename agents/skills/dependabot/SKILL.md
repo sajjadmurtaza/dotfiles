@@ -2,8 +2,7 @@
 name: dependabot
 description: >-
   GitHub Dependabot configuration and PR triage. Use to create or optimize
-  dependabot.yml, group updates, or assess/fix fallout on a Dependabot PR. Stops
-  before approve/merge.
+  dependabot.yml, group updates, or assess/fix fallout on a Dependabot PR.
 ---
 
 # Dependabot
@@ -34,7 +33,4 @@ description: >-
 
 ## Completion criteria
 
-| Branch        | Done when                                                                               |
-| ------------- | --------------------------------------------------------------------------------------- |
-| **configure** | Valid `dependabot.yml` written or reviewed; ecosystems/directories match repo           |
-| **triage**    | Risk assessed; CI fallout fixed or reported; approve-readiness stated; no approve/merge |
+Per-branch Done when in the matched reference. Never approve/merge.

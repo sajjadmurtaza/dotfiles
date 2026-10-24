@@ -1,60 +1,34 @@
 ---
 name: ruby-on-rails-dev
 description: >-
-  Always load $dev first with $ruby-dev. Rails overlay for models, controllers,
-  routes, views, Hotwire, APIs, jobs, mailers, policies, migrations, caching,
-  security, performance, and tests. Use for changes inside a Rails application.
+  Rails overlay: controllers, routes, services, policies, serializers, workers,
+  migrations, tenancy, authz, and API contracts.
+disable-model-invocation: true
 ---
 
 # Ruby on Rails Dev
 
-**Stop:** read `$dev` Shared prep and load `$ruby-dev` before applying this overlay.
+**Stop:** read `$dev` Shared prep before any delta. Loaded with `ruby-dev`; design or private-seam cases → `$dev` → `architecture`.
 
-## Route the change
+Scope: controllers, routes, models, services, policies, serializers, workers/mailers/jobs, migrations, framework config loaders, cache-key composition, encryption cutovers. Require the `security` lens on Assure when authn/authz, tenancy, PII/PHI, secrets, exports, webhooks, raw SQL, or privileged ops are in scope.
 
-Read only the references required by the touched surface:
+## Implementation deltas
 
-| Surface | Reference |
-| --- | --- |
-| boundaries and KISS design | [`reference/architecture.md`](reference/architecture.md) |
-| Active Record behavior | [`reference/models.md`](reference/models.md) |
-| controllers, routes, APIs | [`reference/controllers.md`](reference/controllers.md) |
-| Turbo and Stimulus | [`reference/hotwire.md`](reference/hotwire.md) |
-| Active Job and Action Cable | [`reference/jobs.md`](reference/jobs.md) |
-| migrations, queries, constraints | [`reference/database.md`](reference/database.md) |
-| test selection and Rails 8.1 CI | [`reference/testing.md`](reference/testing.md) |
-| auth, authorization, untrusted input | [`reference/security.md`](reference/security.md) |
-| queries, caching, assets | [`reference/performance.md`](reference/performance.md) |
-| Kamal, Thruster, Solid adapters | [`reference/deployment.md`](reference/deployment.md); for Solid Queue deployments also read [`reference/jobs.md`](reference/jobs.md) and [`reference/database.md`](reference/database.md) |
-| final assurance | [`reference/review-checklist.md`](reference/review-checklist.md) |
+- Name invisible lifecycle contracts (config variants, reload dependencies, cache identity) instead of silent skip.
+- Complete cutovers: replacement seam before removal.
+- Closed-set access and audience-split payloads over presence checks and one-bag disclosure.
+- Validation, execution, and the published API contract see the same normalized input and accepted closed set.
+- Structured logging changes → verify redaction.
 
-## Establish repository truth
+## Rails testing
 
-- Read `AGENTS.md`, `Gemfile.lock`, `config/application.rb`, `config.load_defaults`, routes, nearby code, tests, `bin/`, and CI.
-- Match the locked Rails and Ruby versions. New Rails 8/8.1 capabilities are conditional, not upgrade assumptions.
-- Preserve the repository's test stack, frontend strategy, authorization, queue/cache/cable adapters, schema format, and deployment path unless the request changes them.
+- Service → service specs. Endpoint/controller → request specs (+ policy coverage when authz changes). Serializer → serializer specs. Worker → worker specs asserting idempotency and retry.
+- Skipped broader coverage → state the gap and risk.
 
-## Apply Rails-shaped KISS
+## API docs (`rswag`)
 
-- Prefer Rails conventions and the framework's integrated defaults. Add a gem, layer, callback, concern, or abstraction only when concrete repetition or a boundary earns it.
-- Prefer RESTful resources and conventional routes. Version an API only when the repository already does or compatibility requirements demand it.
-- Put behavior at its closest cohesive owner. A model or ordinary Ruby method is often enough; a service object is not a default layer.
-- Keep controllers about HTTP, jobs about asynchronous orchestration, and Stimulus controllers about browser behavior.
-- Prefer explicit calls over callback chains and ordinary Ruby over metaprogramming.
-- Preserve an established React/Vue client; otherwise prefer server-rendered HTML, Turbo, and small Stimulus controllers.
+One `response` per status code — rswag keys by status, so a second same-code `response` overwrites. Put every variant inside that one block: uniquely named examples (duplicate names overwrite) each with nested context, `let`s, and `run_test!`. Declare the schema once; widen it (`additionalProperties` or `oneOf`) so every example validates. A second same-code `response` only for `document: false`. Regenerate OpenAPI from request specs; never hand-edit. Document format/defaults/example payloads for enums at schema level.
 
-## Testing and validation
+## Handoff deltas
 
-- Add focused behavioral coverage, including authorization/tenant boundaries when touched.
-- Run focused tests first, then the repository's native full gate; prefer `bin/ci` when present.
-- Do not claim a Rails API exists until the locked version or primary Rails documentation confirms it.
-- Request `$code-review` with the security lens for auth, tenancy, secrets, exports, webhooks, raw SQL, uploads, external fetches, or privileged operations.
-
-## Completion
-
-Report:
-
-- Rails layers and user-visible behavior changed.
-- Database, background-job, cache, authorization, tenancy, and API compatibility effects.
-- Commands run with honest pass/fail/skip results.
-- Deployment order, rollback constraints, or unverified paths when relevant.
+Rails-layer impact, authz/tenancy impact, API contract impact, security-skill invocation status, validation gaps.

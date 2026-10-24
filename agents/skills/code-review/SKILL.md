@@ -1,11 +1,10 @@
 ---
 name: code-review
 description: >-
-  Review a local change, branch, or pull request for production readiness,
-  tests, performance, security, legacy/dead-compat debt, or merge-prep quality.
-  Use for a findings-ready review, a PR code review, publishing a review to a
-  PR, /code-review, or when another skill needs a
-  production-readiness or test-quality pass.
+  Review a local change, branch, or PR for production readiness, tests,
+  performance, security, legacy/dead-compat debt, or merge-prep quality. Use for
+  findings-ready review, PR code review, publishing to a PR, /code-review, or a
+  production-readiness / test-quality pass.
 ---
 
 # Review
@@ -20,50 +19,46 @@ Findings-first review of a working tree, branch, commit range, or PR: the `finis
 | `publish`  | PR reviewed end to end, drafts reconciled, submitted as GitHub `COMMENT`                    |
 | `quality`  | Explicit merge-prep: audit, boy-scout refactors, tests, repo gates; changes code            |
 
-- Ask exactly "Publish review on PR?" only in a top-level interactive human session targeting an existing PR with unspecified intent. Skip if already answered, read-only/draft findings requested or implied, publication requested, or no PR. The answer selects execution, not lenses.
+- Ask "Publish review on PR?" only in a top-level interactive human session targeting an existing PR with unspecified intent. Skip if already answered, read-only/draft findings, publication requested, or no PR. Answer selects execution, not lenses.
 - "Review and publish/post/ship the review" → `publish`, no ask.
-- "Post these findings" with an already-verified list → `pull-request` `comment`.
-- "Draft review" = read-only findings unless GitHub-pending comments are explicitly asked: end-to-end review drafts → `publish` stopping before submit; a supplied verified ledger → `pull-request` `comment` (even if it stays pending).
+- "Post these findings" with a verified list → `pull-request` `comment`.
+- "Draft review" = read-only findings unless GitHub-pending explicitly asked: end-to-end drafts → `publish` stopping before submit; supplied verified ledger → `pull-request` `comment`.
 - Never infer `quality` from "review"; it needs explicit permission to change code.
 
 ## Shared prep
 
 Resolve scripts relative to this skill directory. `quality` skips this and runs its own Phase 0 (no `compare_default_branch.sh` first).
 
-- **PR:** no local/default-branch comparison. `scripts/pr-context.sh <pr>` (findings) or `scripts/pr-context.sh --publish <pr>` (publish); review the PR patch and surrounding code at the recorded head SHA, never the local tree/`HEAD`.
+- **PR:** no local/default-branch comparison. `scripts/pr-context.sh <pr>` (findings) or `scripts/pr-context.sh --publish <pr>` (publish); review the PR patch at the recorded head SHA, never the local tree/`HEAD`.
 - **Local:** `scripts/compare_default_branch.sh` (fallback: diff `HEAD` vs `origin/<default>`).
-- **Every target:** **AGENTS.md load** ([`../CONTEXT.md`](../CONTEXT.md)): already injected; nearest file wins; do not re-read or paste unless citing a line. Separate unrelated dirty changes; summarize scope + high-risk areas before selecting lenses.
+- **Every target:** **AGENTS.md load** ([`../CONTEXT.md`](../CONTEXT.md)). Separate unrelated dirty changes before selecting lenses.
 
 **Mandatory reference load (blocking — no findings before these are read):**
 
-1. Always: [`reference/finish.md`](reference/finish.md) (baseline, output format, incident/fix-diff postures).
+1. Always: [`reference/finish.md`](reference/finish.md).
 2. Behavior or tests changed: [`reference/tests.md`](reference/tests.md).
 3. Auth, tenancy, sensitive data, secrets, APIs, SQL, boundaries: [`reference/security.md`](reference/security.md).
-4. Dead-compat signals (deprecated markers, dual exports, superseded hydrate): [`reference/legacy.md`](reference/legacy.md) — report only under `findings`/`publish`; deletion is `quality`-only.
-5. `quality`: [`reference/quality.md`](reference/quality.md) + [`reference/legacy.md`](reference/legacy.md) (always, even without signals).
+4. Dead-compat signals: [`reference/legacy.md`](reference/legacy.md) — report only under `findings`/`publish`; deletion is `quality`-only.
+5. `quality`: [`reference/quality.md`](reference/quality.md) + [`reference/legacy.md`](reference/legacy.md) (always).
 6. `publish`: [`reference/publish.md`](reference/publish.md), [`reference/conventional-comments.md`](reference/conventional-comments.md), [`reference/github-state.md`](reference/github-state.md).
-7. Hot path / allocations (any language): [`reference/perf.md`](reference/perf.md).
-8. `findings` and `publish` with a code diff: [`reference/surfaces.md`](reference/surfaces.md). `quality` does not launch these subagents.
+7. Hot path / allocations: [`reference/perf.md`](reference/perf.md).
+8. `findings`/`publish` with a code diff: [`reference/surfaces.md`](reference/surfaces.md). `quality` does not launch these subagents.
 
 ## Branch reference
 
-- Output shape (all executions' findings): [`reference/finish.md`](reference/finish.md) § Output format.
-- Fixes, reverts, incident diffs: postures in [`reference/finish.md`](reference/finish.md) (single SoT).
-- Reviewing an implementation plan (not code) or embedding review gates in a `$dev` `plan`: [`reference/plan-checklists.md`](reference/plan-checklists.md).
-- Adding a lens or harvesting review lessons: [`reference/growth.md`](reference/growth.md).
+- Plan gates: [`reference/plan-checklists.md`](reference/plan-checklists.md).
+- New lens / harvest: [`reference/growth.md`](reference/growth.md).
 
 ## Handoff
 
 - Surfaces fold into the finish report; they do not publish or fix.
-- Structural findings (shallow module, dual ownership, primitive obsession, boundary leak, unmeasured hot path — not just legacy debt) **name** the `architecture` branch (`deep-modules` / `refactor-types` / `refactor-boundaries` / `performance`). Naming ≠ running; remediation enters via `$dev`.
-- End-to-end PR review + publish stays here; posting an already-verified ledger → `pull-request` `comment`. Never reverse.
-- `findings` never writes to GitHub. Orchestrated / multi-agent DAG: append findings to `.agents/run/<slug>.md` and return (no publish ask). Land + readiness Yes/Conditional → `pull-request` `open` only when land was in the batch ([`../CONTEXT.md`](../CONTEXT.md)).
-- Recurring failure classes → `harvest`. Delivery Ledger fields: [`../CONTEXT.md`](../CONTEXT.md).
+- Structural findings **name** the `architecture` branch; remediation enters via `$dev`.
+- End-to-end PR review + publish stays here; verified ledger → `pull-request` `comment`. Never reverse.
+- `findings` never writes to GitHub. Land + Yes/Conditional → `pull-request` `open` only when land was asked.
+- Recurring failure classes → `harvest`. Delivery Ledger fields: `$dev` Handoff.
 
 ## Completion criteria
 
-| Execution  | Done when                                                                                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `findings` | Selected lenses applied; Critical empty or owned; Important owned/rationale; readiness Yes/No/Conditional; finish output shape; no GitHub writes              |
-| `quality`  | Audit table (legacy Find rows or explicit empty); commit stack executed (or explicit empty); gates green; P0/P1 fixed or listed for re-invoke                 |
-| `publish`  | Fresh multi-lens ledger verified on PR head SHA; drafts reconciled; submitted `COMMENT` or left PENDING (explicit draft-only); URLs reported; no code changed |
+- **`findings`**: lenses applied; Critical empty/owned; Important owned/rationale; readiness Yes/No/Conditional; finish shape; no GitHub writes.
+- **`quality`**: audit table (or empty); commit stack done/empty; gates green; P0/P1 fixed or listed.
+- **`publish`**: fresh ledger on PR head SHA; drafts reconciled; `COMMENT` or PENDING (draft-only); URLs; no code.

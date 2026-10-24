@@ -135,13 +135,11 @@ The shell stays concise and lets each Rails repository define its own commands.
 
 Runtime defaults are exact in [`mise.toml`](mise.toml). A Rails application's own `mise.toml` takes precedence, so existing projects keep their locked Ruby and Node versions.
 
-The [`ruby-on-rails-dev`](agents/skills/ruby-on-rails-dev/) skill covers version-aware Rails 8/8.1 work, including:
+The [`ruby-on-rails-dev`](agents/skills/ruby-on-rails-dev/) overlay adds Rails-specific guidance for:
 
-- conventional architecture and KISS boundaries
-- Active Record, controllers, Hotwire/Turbo/Stimulus, Active Job, and Action Cable
-- safe migrations, constraints, queries, caching, security, and performance
-- Propshaft, Solid Queue/Cache/Cable, Thruster, and optional Kamal deployment
-- focused tests plus repository-native `bin/ci` assurance
+- controllers, routes, models, services, policies, serializers, and jobs
+- migrations, tenancy, authorization, API contracts, and `rswag`
+- focused Rails tests and security-review cues
 
 ## Codex, Claude Code, and Cursor
 
@@ -200,7 +198,7 @@ git config --local --get-regexp '^user\.(name|email)$'
 | Claude Code | `/dev`, `/ruby-on-rails-dev` | `/skills` |
 | Cursor | choose `/dev` or `/ruby-on-rails-dev` | type `/` in Agent chat |
 
-For ambiguous work, start with `$triage`, `$prompt-compiler`, `$jira-ticket`, or `$product-owner`. For a clear implementation, start with `$dev`. Approved multi-phase plans can run through `$orchestrator`; delivery finishes with `$code-review` and `$pull-request` when requested.
+For incidents or unclear operational work, start with `$triage`; for Jira-led work use `$jira-ticket`; for product scope use `$product-owner`. Clear implementation and plans start with `$dev`. Delivery finishes with `$code-review` and `$pull-request` when requested. Use `$ops-chore` for a read-only service-health review.
 
 Try this prompt:
 

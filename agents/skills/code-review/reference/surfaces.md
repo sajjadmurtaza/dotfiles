@@ -1,6 +1,6 @@
 # Surfaces
 
-Cursor subagents folded into the one finish report ([`finish.md`](finish.md)). Not lenses, not executions. `quality` does not launch them.
+Cursor subagents folded into the one finish report (`finish.md`). Not lenses, not executions. `quality` does not launch them.
 
 Launch only for a code diff. Skip docs-only and trivial diffs (comment, typo, single-line config) and say so.
 
@@ -35,4 +35,4 @@ Wrong invocation or other failure: retry once, then stop and name the blocker.
 
 ## Fold
 
-Fold both into that single finish report. Do not fix, publish, or launch a second review from their output. Orchestrated runs append the same report to `.agents/run/<slug>.md`.
+Fold both into that single finish report. Do not fix, publish, or launch a second review from their output. Return findings in chat.

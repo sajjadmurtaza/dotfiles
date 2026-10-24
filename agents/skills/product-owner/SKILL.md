@@ -1,35 +1,27 @@
 ---
 name: product-owner
 description: >-
-  Product domain router: admit, defer, or reject scope against cited golden
-  paths, click budgets, cognitive load, and mental models. Use before feature
-  proposals, scope debates, UI/API surface expansion, product evaluations, idea
-  / user feedback / UAT that changes scope, or any "should we build X?"; to
-  slice admitted scope into Given/When/Then user stories with interaction
-  budgets before $dev plan; to admit debt tranches; or to re-baseline stale
-  doctrine (north star predates what shipped, founder overrides piled up).
+  Admit, defer, or reject product scope; slice Given/When/Then stories; admit
+  debt tranches; re-baseline doctrine. Use for feature proposals, scope debates,
+  UI/API expansion, UAT that changes scope, or "should we build X?".
 ---
 
 # Product Owner
 
-Features must earn their existence; doctrine overrides enthusiasm, founder bias, and technical elegance. Vocabulary: [`../CONTEXT.md`](../CONTEXT.md).
+Vocabulary: [`../CONTEXT.md`](../CONTEXT.md). Doctrine overrides enthusiasm — see [`reference/gate.md`](reference/gate.md).
 
 ## Pick branch
 
-Default **`gate`**. Never ask the user to pick when signals are clear.
+Default **`gate`**. Never ask the user to pick when signals are clear. Unauthored branch name → say so (stay on `gate` when admission applies).
 
-| Branch        | Status | Signals                                                                                                                 |
-| ------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `gate`        | active | should we build, admit/defer, parity, UI/API surface, UAT expansion, debt tranche admission                             |
-| `story-slice` | active | user stories, GWT, UX budgets, AC — only after `gate` Build Now / founder override                                      |
-| `rebaseline`  | active | doctrine feels stale, north star predates shipped product, many founder overrides; step 0 `re-baseline`                 |
-| `groom`       | active | groom backlog, epic cleanup, reparent orphans, board sync after sequencing → [`reference/groom.md`](reference/groom.md) |
-| `prioritize`  | stub   | backlog ranking                                                                                                         |
-| `experiment`  | stub   | experiment / analytics design                                                                                           |
+| Branch        | Signals                                                                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `gate`        | should we build, admit/defer, parity, UI/API surface, UAT expansion, debt tranche admission                             |
+| `story-slice` | user stories, GWT, UX budgets, AC — only after `gate` Build Now / founder override                                      |
+| `rebaseline`  | doctrine feels stale, north star predates shipped product, many founder overrides; step 0 `re-baseline`                 |
+| `groom`       | groom backlog, epic cleanup, reparent orphans, board sync after sequencing → [`reference/groom.md`](reference/groom.md) |
 
-Stubs are not authored — never invent their content. Signals only at a stub: stay on `gate` when admission applies, else say the branch is not authored.
-
-Skip: routine surgical bugfix / single-slice cleanup with no user-facing concept or step change; stress-test-only → `grilling`; already one cited AC with no slice ask → no `story-slice`.
+Skip: routine surgical bug fix / single-slice cleanup with no user-facing concept or step change; stress-test-only → `grilling`; already one cited AC with no slice ask → no `story-slice`.
 
 **Gate vs overlay** (`gate` only):
 
@@ -38,50 +30,35 @@ Skip: routine surgical bugfix / single-slice cleanup with no user-facing concept
 
 ## Shared prep
 
-Evidence rules (all branches):
-
-- Discover golden paths, click budgets, personas, mental models only from existing repo docs (`AGENTS.md`, `ROADMAP.md`, `CONTEXT.md`, `docs/personas.md`, repo-local product-owner wrapper, or equivalents). Cite the path for every such claim; uncited → `unknown`.
-- Never invent golden paths, step counts, budgets, SLAs, personas, or preserved/prohibited models. Docs silent → Confidence ≤ Medium; prefer Research Further or one clarifying question.
-- No documented personas → don't evaluate against a "general user"; prompt to set up `docs/personas.md` with concrete candidates synthesized from local history (ADRs, git log, README, evaluations, stories).
-- No documented step budget → report deltas qualitatively (`adds friction` / `removes friction` / `unclear`).
+- Cite personas, golden paths, click budgets, mental models, doctrine ledger only from `<project>/.agents/product.md` ([`../CONTEXT.md`](../CONTEXT.md)). Absent → `unknown`. Never invent. Silent → Confidence ≤ Medium; prefer Research Further or one clarifying question.
+- No personas section → don't invent a "general user". No step budget → qualitative delta only.
 
 ## Branch reference
 
-- `gate`: [`reference/gate.md`](reference/gate.md) — staleness step 0, doctrine, Doctrine Check, Decision Output.
-- `story-slice`: [`reference/story-slice.md`](reference/story-slice.md) — Story Card, Quality Gate Matrix.
-- `rebaseline`: [`reference/rebaseline.md`](reference/rebaseline.md) — never evaluates a feature.
+- `gate`: [`reference/gate.md`](reference/gate.md)
+- `story-slice`: [`reference/story-slice.md`](reference/story-slice.md)
+- `rebaseline`: [`reference/rebaseline.md`](reference/rebaseline.md)
 
 ## Handoff
 
 ```text
 product-owner gate
-  Build Now       → fold still-open consents into this same reply
-                    (commit on the default branch, land).
-                    Do not ask how to run the plan yet.
-                    story-slice when the ask is stories / multi-slice /
-                    UX-mandated AC; else $dev plan. After the plan file
-                    exists, $dev offers multi-agent or enqueue. Intent
-                    entrypoints (e.g. jira-ticket) may continue; debt
-                    tranches from .agents/debt-ledger.md route to $dev plan
-  Build Later     → stop impl; no stories; optional communication/status
-  Research Further → name smallest missing product artifact; do not invent strategy;
-                    reason `re-baseline` → branch `rebaseline` (do not evaluate the feature)
-  Reject          → stop; no stories (unless user explicitly overrides — then $dev plan records override)
+  Build Now       → story-slice when stories / multi-slice / UX-mandated AC;
+                    else $dev plan. Intent entrypoints may continue; debt → $dev plan
+  Build Later     → stop impl; no stories
+  Research Further → name smallest missing product artifact; reason `re-baseline` → `rebaseline`
+  Reject          → stop; no stories (user override → $dev plan records it)
 product-owner story-slice
-  ready cards     → $dev plan in the same turn (planning session writes no code)
-  ungated/reject  → stop; do not invent stories
-  Plan mode       → explicit /product-owner; product stance in dev/reference/plan-pipeline.md
+  ready cards     → $dev plan same turn (writes no code)
+  ungated/reject  → stop
 product-owner rebaseline
-  done            → gate can run again against the new basis
-grilling          → Decide only (stress-test interview); this skill keeps doctrine + evidence rules if topic is scope
+  done            → gate can run again
+grilling          → Decide only; this skill keeps doctrine if topic is scope
 architecture / dev / *-dev / code-review → never own "should we build X?"
 ```
 
-Never treat `architecture` as a parallel Build entry beside `$dev`. This skill does not teach how to build.
+Never treat `architecture` as a parallel Build entry beside `$dev`.
 
 ## Completion criteria
 
-- **Gate**: step 0 ran; Doctrine Check answered; Forced Challenge stated; full Decision Output incl. Doctrine delta; Evidence lists paths or gaps.
-- **Overlay**: step 0 ran; full Decision Output only for Reject / Build Later / Research Further.
-- **story-slice**: prerequisite gate/override cited; contraband stripped; one Story Card per slice; Quality Gate Matrix filled; ready for `$dev` `plan`.
-- **rebaseline**: [`reference/rebaseline.md`](reference/rebaseline.md) completion criteria met, incl. the falsification clause.
+Per-branch Done when in the matched reference. Gate/overlay: step 0 + Decision Output rules above.

@@ -3,11 +3,16 @@ SYSTEM_RUBY ?= $(if $(wildcard $(MACOS_SYSTEM_RUBY)),$(MACOS_SYSTEM_RUBY),ruby)
 RUBOCOP := $(shell command -v rubocop)
 RUBOCOP_BIN_DIR := $(dir $(RUBOCOP))
 
-.PHONY: test lint
+.PHONY: check lint test ready
 
-test:
-	$(SYSTEM_RUBY) -Itest -e 'Dir["test/*_test.rb"].sort.each { |file| require File.expand_path(file) }'
+check: lint test
 
 lint:
 	mkdir -p .cache
 	PATH="$(RUBOCOP_BIN_DIR):$(PATH)" XDG_CACHE_HOME=$(CURDIR)/.cache $(RUBOCOP) -c .rubocop.yml ../scripts/skill src test
+
+test:
+	$(SYSTEM_RUBY) -Itest -e 'Dir["test/*_test.rb"].sort.each { |file| require File.expand_path(file) }'
+
+ready: check
+	$(SYSTEM_RUBY) src/cli.rb lint

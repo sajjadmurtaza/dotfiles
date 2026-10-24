@@ -4,7 +4,7 @@
 
 `skill/` owns the implementation and tests for the `skill` command used to manage `<dotfiles-root>/agents/skills`.
 
-Install first-party skills with the Skills CLI (repo `agents/skills/<name>/` → `~/.agents/skills/<name>/`). This local CLI handles store hygiene only: `list`, `doctor`, `prune`, `backfill`, `promote`, and `rename`.
+Install first-party skills with the Skills CLI (repo `agents/skills/<name>/` → `~/.agents/skills/<name>/`). This CLI handles store hygiene only: `list`, `doctor`, `lint`, `prune`, `backfill`, `promote`, and `rename`.
 
 ## Key Decision
 
@@ -47,7 +47,7 @@ Do not optimize for:
 - The tool manages local directories in the dotfiles store; it should fail closed rather than overwrite unexpected paths.
 - Behavior should remain understandable from CLI output alone. Errors should be explicit and actionable.
 - Do not create agent install links. Print the full Skills CLI reinstall command after promote/rename/backfill.
-- `prune` only removes store-backed links under `~/.agents/skills` whose source is gone; it never creates links.
+- `prune` only removes store-backed links under `~/.agents/skills` whose store source is gone; it never creates links.
 - `Skill::Classifier` owns status, drift, and orphan detection; doctor/backfill/prune must not reimplement those rules.
 
 ## Canonical Paths
@@ -74,10 +74,10 @@ Do not optimize for:
 Run:
 
 ```sh
-make lint test
+make check
 ```
 
-Quality gate: `make lint test` must pass before handoff.
+Quality gate: `make check` must pass before handoff. Pre-PR: `make ready` (includes `skill lint` on the store).
 
 `make test` is the compatibility gate because it uses macOS system Ruby 2.6.
 

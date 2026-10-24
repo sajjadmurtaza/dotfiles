@@ -7,4 +7,5 @@ test:
 	$(MAKE) -C skill test SYSTEM_RUBY=$(SYSTEM_RUBY)
 
 verify: test
+	$(SYSTEM_RUBY) skill/src/cli.rb lint
 	$(SYSTEM_RUBY) scripts/dotfiles verify

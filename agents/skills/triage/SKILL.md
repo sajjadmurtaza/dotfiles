@@ -2,10 +2,8 @@
 name: triage
 description: >-
   Intent intake for incidents and fuzzy ops asks: gather evidence, classify
-  product vs eng scope, emit a Triage Ledger, hand off to product-owner gate or
-  $dev plan. Use for production errors, timeouts, degraded integrations,
-  /triage, /intake, or when the next step is unclear between admit-scope and
-  implementation planning.
+  product vs eng scope, emit a Triage Ledger. Use for errors, timeouts,
+  degraded integrations, /triage, /intake, or unclear admit-scope vs plan.
 ---
 
 # Triage
@@ -14,43 +12,33 @@ Incident/ops signals → evidence → Triage Ledger → exactly one next skill. 
 
 ## Pick branch
 
-Default and only branch: **`intake`**. Never ask the user to pick.
+Default and only branch: **`intake`**.
 
-Skip: approved plan / explicit go → `$dev` `implement`; Jira key/URL → `jira-ticket`; pure intent compilation → `prompt-compiler`; stress-test → `grilling`; morning PR attention → `pr-sweep`.
+
+Skip: approved plan / explicit go → `$dev` `implement`; Jira key/URL → `jira-ticket`; stress-test → `grilling`; morning PR attention → `pr-sweep`.
 
 ## Shared prep
 
-1. Prefer repo law (`AGENTS.md` / `CONTEXT.md`).
-2. Observability cue: [`../CONTEXT.md`](../CONTEXT.md); missing MCP → say so, continue with ask + codebase.
-3. Reproduce locally when cheap. Label claims **Strong** / **Worth** / **Speculative**.
-4. Never implement, open PRs, raise timeouts, or invent golden paths / click budgets.
-5. Max **2** clarifying questions, only if the route is blocked; otherwise use the route table.
+Observability cue: [`../CONTEXT.md`](../CONTEXT.md). Reproduce when cheap; label Strong / Worth / Speculative (see [`reference/intake.md`](reference/intake.md)). Never implement, open PRs, raise timeouts, or invent golden paths. Max **2** clarifying questions when route blocked. Never re-grill playbook locks.
 
 ## Branch reference
 
-- `intake` → [`reference/intake.md`](reference/intake.md) — evidence checklist, route table, Triage Ledger schema.
+- `intake` → [`reference/intake.md`](reference/intake.md)
 
 ## Handoff
 
-Emit the Triage Ledger, then load exactly one next skill:
+Emit the Triage Ledger, then load exactly one next skill (route table in `intake.md`):
 
 ```text
 triage intake
-  product | both     → product-owner gate
-                         Build Now → $dev plan
-                         Build Later | Research Further | Reject → stop
+  product | both     → product-owner gate → Build Now → $dev plan; else stop
   eng only           → $dev plan
   should-we-build    → product-owner only
   approved plan / go → stop triage; $dev implement
 ```
 
-**Continue policy:** user already said go or "plan then implement" → after Build Now continue into `$dev` `plan` (`implement` only when explicitly approved). Otherwise stop after the ledger and next-skill handoff.
-
-Lifecycle / product-before-Build: [`../CONTEXT.md`](../CONTEXT.md). Triage never owns Assure/Ship. Hand off only — never paste doctrine or plan-pipeline bodies.
+**Continue policy:** go / Shot 2 / "plan then implement" → after Build Now continue `$dev` `plan` (`implement` only when explicitly approved). Shot 1 alone → stop after ledger + next skill. Hand off only — never paste doctrine or `$dev` plan bodies.
 
 ## Completion criteria
 
-- `intake`: evidence listed; Triage Ledger emitted; route chosen with rationale; next skill loaded or explicit stop.
-- Handoff PO: gate runs (or prior gate summarized); no application code.
-- Handoff `$dev` plan: product stance noted (`Build Now` / `skip`+why / pending).
-- Stop: approved plan present, PO not Build Now, or should-we-build-only resolved.
+Triage Ledger emitted; route chosen; next skill loaded or explicit stop. Never owns Assure/Ship or application code.

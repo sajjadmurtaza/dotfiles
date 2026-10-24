@@ -4,7 +4,7 @@ Finished local change → commit → push → `gh pr create --web`. Autonomous; 
 
 ## Ticket
 
-First match of `/[A-Z][A-Z0-9]+-\d+/` in `git branch --show-current`. Found → put it in the commit title, PR title, and body. None → continue ticketless (title/scope from branch slug or diff); request one only in a top-level interactive session when repo law requires it.
+First match of `/[A-Z][A-Z0-9]+-\d+/` in `git branch --show-current`. Found → put it in the commit title, PR title, and body. None → continue ticketless; request one only in a top-level interactive session when repo law requires it.
 
 ## Commit scope
 
@@ -14,7 +14,7 @@ First match of `/[A-Z][A-Z0-9]+-\d+/` in `git branch --show-current`. Found → 
 
 ## Commit message
 
-Prefer phase commits already authored during Build. Only if the tree is still dirty, commit session-touched files once with Conventional Commits (format SoT: [`CONTEXT.md`](../../CONTEXT.md)), ticket right after scope:
+Prefer phase commits already authored during Build. Only if the tree is still dirty, commit session-touched files once with Conventional Commits ([`../../dev/reference/phase-commits.md`](../../dev/reference/phase-commits.md)), ticket right after scope:
 
 ```text
 type(scope): [ABC-123] summary
@@ -27,11 +27,11 @@ Also satisfy repo-local commit conventions/body sections. `Resolves: DEBT-<NUMBE
 
 - Title/body per [`pr-narrative.md`](pr-narrative.md), rebuilt from full `base...HEAD`; list only validation actually run.
 - Base branch: `gh repo view --json defaultBranchRef --jq .defaultBranchRef.name` → `git symbolic-ref refs/remotes/origin/HEAD` → repo-declared base; ask only if underivable.
-- Push with upstream; confirm push succeeded; `gh pr create --web --base <default> --title … --body …` (quote safely; avoid shell-reinterpreted backticks). `gh` unavailable/unauthenticated → give the URL/manual step.
+- Push with upstream; confirm push succeeded; `gh pr create --web --base <default> --title … --body …`. `gh` unavailable/unauthenticated → give the URL/manual step.
 
 ## Jira sync
 
-Ticket derived (or `$jira-ticket` flow) and Atlassian MCP available → run `jira-ticket` **Post-PR Jira sync** (→ **Ready for Review**, comment PR URL) without re-asking. Unavailable / no transition → report and continue.
+Ticket derived (or `$jira-ticket` flow) and Atlassian MCP available → run `jira-ticket` **Post-PR Jira sync** without re-asking. Unavailable / no transition → report and continue.
 
 ## Output
 

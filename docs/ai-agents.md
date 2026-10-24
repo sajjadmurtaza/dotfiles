@@ -87,11 +87,11 @@ Agents can also select a skill automatically from its description. Explicit invo
 | Situation | Start with | Next |
 | --- | --- | --- |
 | Incident or unclear operational problem | `triage` | product decision or `$dev plan` |
-| Ambiguous developer request | `prompt-compiler` | `$dev plan` |
 | Jira-led work | `jira-ticket` | product gate when needed, then `$dev` |
 | Product scope decision | `product-owner` | `$dev` only after Build Now |
 | Clear implementation | `dev` | architecture/runtime routing, then code review |
-| Approved multi-phase plan | `orchestrator` | one cumulative `code-review` pass |
+| Implementation plan | `dev` plan | phase execution, then one `code-review` pass |
+| Service-health review | `ops-chore` | admitted fixes can enter `$dev` plan |
 | PR attention report | `pr-sweep` | exact `pull-request`, `dependabot`, or `code-review` action |
 
 ## Rails example
@@ -102,7 +102,7 @@ Follow repository conventions, keep the design KISS, test authorization and
 tenant boundaries, run the native CI gate, then use $code-review.
 ```
 
-The Rails overlay loads only the focused reference needed for models, controllers, Hotwire, jobs, data, tests, security, performance, or deployment. The root skill stays concise so routine work does not consume the full reference set.
+The Rails overlay stays intentionally small and loads alongside `dev` and `ruby-dev`. Repository-local `AGENTS.md` and project skills remain authoritative for application-specific commands, architecture, and security rules.
 
 ## Safe agent configuration
 
