@@ -48,9 +48,9 @@ jobs:
       - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # master, 2026-08-18
         with:
           ruby-version: "3.4"
-      - name: Install rcm (Linux)
+      - name: Install rcm and Zsh (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install --yes rcm
+        run: sudo apt-get update && sudo apt-get install --yes rcm zsh
       - name: Install rcm (macOS)
         if: runner.os == 'macOS'
         run: brew install rcm

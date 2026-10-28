@@ -107,6 +107,14 @@ class GitconfigPolicyTest < Minitest::Test
   end
 end
 
+class CIWorkflowTest < Minitest::Test
+  def test_linux_job_installs_the_shell_exercised_by_startup_tests
+    workflow = File.read(File.expand_path("../.github/workflows/shellcheck.yml", __dir__))
+
+    assert_includes(workflow, "sudo apt-get install --yes rcm zsh")
+  end
+end
+
 class VerifierTest < Minitest::Test
   def test_rejects_tracked_personal_identity
     Dir.mktmpdir do |dir|
