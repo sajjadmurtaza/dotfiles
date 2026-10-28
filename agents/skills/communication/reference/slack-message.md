@@ -1,24 +1,28 @@
 # Slack Message
 
-Notes, bullets, or a rough draft → Slack-ready internal message for engineering, product, tech leadership, cross-functional, or department-wide audiences (mixed technical and non-technical readers).
+Turn supplied context into an accurate internal Slack message. Read the whole conversation; answer its real question or decision.
+
+## Choose shape
+
+- **Reply:** normally 1–3 sentences in the user's established tone. Lead with useful evidence, then a short interpretation, question, or action.
+- **Ask or blocker:** state the ask early, only the needed context, and the consequence or next step.
+- **Announcement or broad update:** use short paragraphs or bullets only when helpful. Cover context, impact, action, and timing.
+
+## Truth
+
+- Preserve exact references, identifiers, timestamps, terminology, behavior, intent, and audience.
+- Separate confirmed facts from assumptions. Never claim something was checked, reproduced, fixed, tested, or agreed unless evidence proves it.
+- Do not repeat an established answer. When the premise is uncertain or contradictory, ask one natural question rather than inventing certainty.
+- If the intended reply is materially inaccurate, flag that briefly before drafting a corrected version.
+
+## Voice
+
+- Sound like the user, not a corporate template. Prefer simple, direct language and natural contractions.
+- Avoid canned praise, generic introductions, over-explanation, formal conclusions, and phrases such as "Great point", "To clarify", "It's worth noting", or "Moving forward".
+- Do not manufacture slang, typos, emojis, certainty, or friendliness. Preserve informal casing or familiar phrases only when requested or demonstrated in the supplied messages.
+- Avoid em dashes and decorative formatting in conversational replies unless the user's style uses them.
+- For sensitive messages, describe operational impact before fault and ask directly for the needed decision.
 
 ## Output
 
-- Slack scanning: short paragraphs, bullets, light headings. Calm, deliberate, professional. Keep the user's intent, ask, and audience unless asked to reposition.
-- Substantial messages: Context → What is changing → Why → Impact / expectations → Next steps. Compress for short announcements or direct asks.
-- Lead with why it's sent and the business/operational intent. Name the accountable role instead of "we decided". State who is affected, what changes, what stays, what action is expected; end with next steps, timing, docs, or contacts.
-- Frame standards, governance, capacity, compliance, or ops changes as delivery predictability, sustainability, risk reduction, quality, or customer outcomes.
-- Direct business phrasing over vague. Default close: "Thanks in advance. Please reply here if you have a preference or concerns." unless a stronger ask is requested.
-
-## Sensitive messages
-
-Line managers, leadership, escalations, blockers, policy friction:
-
-- Open with context and operational intent — not "We have a problem with…" / "You need to…".
-- Frame as a delivery, coordination, policy, or operational constraint before any team or role. System-first over person-first blame; name the consequence before any failure.
-- Alignment/confirmation/decision asks — not directives unless explicitly wanted.
-- Explain why it matters with the ask; consequence phrasing ("Without this decision, we risk…") — not status-heavy. Direct attribution only when the user asks for sharper ownership.
-
-## Decision requests
-
-Escalation or blocker needing leadership action: ask for the decision directly. Lead with the decision needed → 2–5 compact progress bullets → blocker in operational terms → options only if in the user's input → consequence of delay + soft in-thread reply request.
+Return only the best message by default, without analysis, greeting, or sign-off unless it fits. If variants are requested, return **Natural**, **Short**, and **Technical**; omit one that adds no value. Say when no reply is needed instead of forcing one.

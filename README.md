@@ -206,6 +206,19 @@ Before adding a third-party skill or MCP server, use one line; the saved securit
 Use $code-review to audit this skill or MCP before installation: [SOURCE]
 ```
 
+For a natural internal Slack reply, paste the complete relevant thread. The
+skill returns one concise reply by default and never invents verification:
+
+```text
+Use $communication to draft a natural reply to this Slack conversation.
+
+Conversation:
+[PASTE THE COMPLETE RELEVANT THREAD]
+
+What I want to add, if anything:
+[OPTIONAL FACTS, QUESTION, OR PROPOSED ACTION]
+```
+
 Try this prompt:
 
 ```text
