@@ -51,7 +51,7 @@ Never ask the user to pick when signals are clear.
 
 ## Branch reference
 
-- **`plan`** — writes no code. Each todo names its exact repo-relative files, one gate copied from repo evidence (`AGENTS.md`, `Makefile`, CI; none trustworthy → halt and name the missing contract, never invent), and its Conventional Commit message. Embed [`../code-review/reference/plan-checklists.md`](../code-review/reference/plan-checklists.md) where signaled. Execute: [`reference/phase-commits.md`](reference/phase-commits.md).
+- **`plan`** — writes no code. Each todo names exact files, one repo-evidenced gate (`AGENTS.md`, `Makefile`, CI; none trustworthy → halt), and a Conventional Commit message. Ticket-led behavior maps every acceptance criterion to test or verification evidence. Embed [`../code-review/reference/plan-checklists.md`](../code-review/reference/plan-checklists.md) where signaled. Execute: [`reference/phase-commits.md`](reference/phase-commits.md).
 - **`implement`** — Shared prep → classify (axioms; `architecture` if design) → load routed `{lang}-dev` (+ overlay, reference) → execute → post-delivery Assure → handoff.
 
 ## Handoff
@@ -75,5 +75,5 @@ Path: `$dev` ⇄ `architecture` → `code-review` → `pull-request`; never reve
 
 ## Completion criteria
 
-- **`plan`**: each todo names exact files, one discovered gate, Conventional Commit message; session wrote no code.
+- **`plan`**: exact files, repo-evidenced gate, commit message, and ticket AC-to-verification map; no code written.
 - **`implement`**: classification + axioms (+ architecture decisions if design); compat decided/asked; pack handoff fields; exit-0 honesty; commits made/deferred; Assure done or trivial skip stated.
