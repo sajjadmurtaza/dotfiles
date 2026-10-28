@@ -200,6 +200,12 @@ git config --local --get-regexp '^user\.(name|email)$'
 
 For incidents or unclear operational work, start with `$triage`; for Jira-led work use `$jira-ticket`; for product scope use `$product-owner`. Clear implementation and plans start with `$dev`. Delivery finishes with `$code-review` and `$pull-request` when requested. Use `$ops-chore` for a read-only service-health review.
 
+Before adding a third-party skill or MCP server, use one line; the saved security checklist loads automatically:
+
+```text
+Use $code-review to audit this skill or MCP before installation: [SOURCE]
+```
+
 Try this prompt:
 
 ```text

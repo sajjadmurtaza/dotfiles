@@ -48,6 +48,13 @@ npx skills add https://github.com/arjitj2/swiftui-design-principles --skill swif
 
 More: [skills.sh](https://skills.sh/), [Swift-Agent-Skills](https://github.com/twostraws/Swift-Agent-Skills).
 
+> [!WARNING]
+> A directory listing, star count, or install count is discovery evidence—not a
+> security review. Before adding any third-party skill or MCP server, inspect its
+> source, scripts, install hooks, permissions, network behavior, credential access,
+> license, revision, and update path. Prefer a pinned, narrow capability and test it
+> with least privilege. Never bulk-install a collection merely because it is popular.
+
 ## Compose / handoffs
 
 Build path: `$dev` ⇄ `architecture` → `code-review` → `pull-request`. `$dev` is the only Build entry. Runtime contracts live in skills and [`CONTEXT.md`](CONTEXT.md).

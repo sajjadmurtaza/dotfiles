@@ -1,10 +1,10 @@
 ---
 name: code-review
 description: >-
-  Review a local change, branch, or PR for production readiness, tests,
-  performance, security, legacy/dead-compat debt, or merge-prep quality. Use for
-  findings-ready review, PR code review, publishing to a PR, /code-review, or a
-  production-readiness / test-quality pass.
+  Review local changes, branches, PRs, agent skills, or MCP servers for readiness,
+  tests, performance, security, legacy debt, or merge prep. Use for findings, PR
+  review, third-party tool admission, publishing, /code-review, or production and
+  test-quality passes.
 ---
 
 # Review
@@ -37,7 +37,7 @@ Resolve scripts relative to this skill directory. `quality` skips this and runs 
 
 1. Always: [`reference/finish.md`](reference/finish.md).
 2. Behavior or tests changed: [`reference/tests.md`](reference/tests.md).
-3. Auth, tenancy, sensitive data, secrets, APIs, SQL, boundaries: [`reference/security.md`](reference/security.md).
+3. Security-sensitive code, dependencies, agent skills, or MCP/tool admission: [`reference/security.md`](reference/security.md).
 4. Dead-compat signals: [`reference/legacy.md`](reference/legacy.md) — report only under `findings`/`publish`; deletion is `quality`-only.
 5. `quality`: [`reference/quality.md`](reference/quality.md) + [`reference/legacy.md`](reference/legacy.md) (always).
 6. `publish`: [`reference/publish.md`](reference/publish.md), [`reference/conventional-comments.md`](reference/conventional-comments.md), [`reference/github-state.md`](reference/github-state.md).

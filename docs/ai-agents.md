@@ -111,4 +111,26 @@ The Rails overlay stays intentionally small and loads alongside `dev` and `ruby-
 - Agent-specific credentials and MCP connections stay in each agent's local settings, not this public repository.
 - Project rules remain authoritative. A skill should adapt to the repository rather than replace its architecture.
 
+Before adding a third-party skill or MCP server:
+
+1. Verify the repository, maintainer, license, revision, recent maintenance, and the exact files that will be installed. Stars and install counts indicate popularity, not safety.
+2. Read `SKILL.md`, scripts, package manifests, install hooks, network calls, telemetry, and requested filesystem, credential, and tool permissions.
+3. Prefer a pinned revision and the smallest capability set. Do not use download-and-execute commands such as `curl ... | sh`.
+4. Keep credentials in the agent's approved local secret store. Never commit MCP tokens or copy them into prompts, logs, examples, or reports.
+5. Test in a disposable or least-privileged environment. Require explicit approval before active endpoint probing, dependency installation, or external writes.
+6. Re-review source changes before updating. Remove access that is no longer needed.
+
+Use `$code-review` with its `security` lens for security-sensitive code and for changes to skills, MCP servers, retrieved-content pipelines, or agent tool permissions. The review is defensive and read-only by default; it does not authorize penetration testing or installation of scanners.
+
+Before installing a new integration, the short reusable prompt is enough:
+
+```text
+Use $code-review to audit this skill or MCP before installation: [SOURCE]
+```
+
+`$code-review` automatically selects the security lens, loads the saved
+agent/tool supply-chain checklist, stays read-only, and returns an
+install/adapt/reject recommendation. Add special scope only when needed; do not
+copy the full checklist into every prompt.
+
 Codex officially scans user skills in `~/.agents/skills`. See [OpenAI's skill documentation](https://developers.openai.com/codex/skills). The complete catalog and authoring rules live in [`../agents/skills/README.md`](../agents/skills/README.md).
