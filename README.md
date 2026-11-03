@@ -198,6 +198,26 @@ git config --local --get-regexp '^user\.(name|email)$'
 | Claude Code | `/dev`, `/ruby-on-rails-dev` | `/skills` |
 | Cursor | choose `/dev` or `/ruby-on-rails-dev` | type `/` in Agent chat |
 
+### Read-only GitHub attention
+
+`$pr-sweep` can keep separate local profiles for different GitHub accounts and
+monitor meaningful PR changes while the current agent session remains open. It
+routes CI failures, conflicts, review feedback, review requests, and Dependabot
+PRs to the existing specialist skills; it never changes code or GitHub itself.
+
+Start with:
+
+```text
+Use $pr-sweep for profile PROFILE. Stay read-only, show what needs attention,
+and start session monitoring when this agent can return background output.
+Do not execute the recommended routes.
+```
+
+Profile configuration and ledgers live under the user's config/state homes with
+owner-only permissions. They are not tracked by this repository. Automatic CI
+reruns are intentionally not part of the pilot. See the
+[cross-agent guide](docs/ai-agents.md#read-only-github-attention).
+
 For incidents or unclear operational work, start with `$triage`; for Jira-led work use `$jira-ticket`; for product scope use `$product-owner`. Clear implementation and plans start with `$dev`. Delivery finishes with `$code-review` and `$pull-request` when requested. Use `$ops-chore` for a read-only service-health review.
 
 Before adding a third-party skill or MCP server, use one line; the saved security checklist loads automatically:

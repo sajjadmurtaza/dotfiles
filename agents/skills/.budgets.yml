@@ -45,8 +45,12 @@ words:
   ops-chore/reference/ledger.md: 155
   ops-chore/reference/playbook.md: 403
   ops-chore/reference/presets.md: 231
-  pr-sweep/SKILL.md: 216
+  pr-sweep/SKILL.md: 367
+  pr-sweep/reference/decide.md: 54
+  pr-sweep/reference/monitor.md: 99
   pr-sweep/reference/report.md: 166
+  pr-sweep/reference/setup.md: 117
+  pr-sweep/reference/wrap.md: 54
   product-owner/SKILL.md: 434
   product-owner/reference/gate.md: 441
   product-owner/reference/groom.md: 544

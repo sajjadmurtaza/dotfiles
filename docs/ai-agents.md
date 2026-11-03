@@ -92,7 +92,35 @@ Agents can also select a skill automatically from its description. Explicit invo
 | Clear implementation | `dev` | architecture/runtime routing, then code review |
 | Implementation plan | `dev` plan | phase execution, then one `code-review` pass |
 | Service-health review | `ops-chore` | admitted fixes can enter `$dev` plan |
-| PR attention report | `pr-sweep` | exact `pull-request`, `dependabot`, or `code-review` action |
+| PR attention or session watch | `pr-sweep` | exact `pull-request`, `dependabot`, or `code-review` action |
+
+## Read-only GitHub attention
+
+`pr-sweep` has one shared implementation for all repositories. A named local
+profile supplies the expected GitHub login, allowed owners/repositories, and a
+dedicated `GH_CONFIG_DIR`; no company or account is hardcoded in the skill.
+
+Use the skill's `setup` branch once per profile. Thereafter:
+
+```text
+Use $pr-sweep for profile PROFILE. Run doctor and one attention scan. If this
+agent can surface background-process output, monitor meaningful changes for the
+rest of this session. Stay read-only and do not execute routed actions.
+```
+
+The monitor runs an initial scan, polls after three minutes, and backs off to
+ten-minute quiet intervals. It ends with the agent session or when explicitly
+stopped; it is not a daemon or scheduler. Unsupported hosts remain on-demand.
+
+The helper stores only minimal PR identity, classification, route, fingerprint,
+decision, and timestamps. It excludes titles, bodies, comments, CI logs, and
+credentials. Profiles and ledgers are local `0700`/`0600` data. Account mismatch
+is a hard stop, and no command in this skill mutates GitHub.
+
+When an item needs action, enter the target repository and follow its live rules
+before invoking the returned specialist skill. Do not load every skill during a
+scan. Automatic flaky-CI retries remain deferred until read-only monitoring has
+been validated with real use and separately approved.
 
 ## Rails example
 

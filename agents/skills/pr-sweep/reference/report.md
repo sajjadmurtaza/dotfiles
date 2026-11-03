@@ -1,36 +1,23 @@
 # Report
 
-## Discover
+Run `doctor`, then one `tick` with the explicit profile:
 
-Stay on these two sets unless the user widens scope (never walk all org PRs):
-
-```bash
-gh search prs --review-requested=@me --owner=<org> --state=open \
-  --json url,repository,title,number,updatedAt --limit 50
-gh search prs --author=@me --owner=<org> --state=open \
-  --json url,repository,title,number,isDraft --limit 50
+```sh
+ruby <skill-dir>/scripts/attention doctor --profile PROFILE
+ruby <skill-dir>/scripts/attention tick --profile PROFILE
 ```
 
-Possibly blocked authored PR → only:
+Render only returned `items`: repository, PR number, kind, URL, and exact route.
+Do not fetch PR bodies, comments, diffs, or CI logs in this branch. `quiet` means
+no attention fingerprint changed since the previous scan; use `summary` only
+when the user asks to see previously recorded items.
 
-```bash
-gh pr view <url> --json url,mergeable,mergeStateStatus,statusCheckRollup,reviewDecision,author
-```
+The helper classifies one primary attention type per PR:
 
-Dependabot = `author.login` matching `dependabot*` / `app/dependabot`.
+1. conflicts;
+2. failing CI;
+3. changes requested;
+4. review requested;
+5. Dependabot review.
 
-## Classify (one primary blocker per PR, highest wins)
-
-1. Conflicts (`mergeable == CONFLICTING`)
-2. Failing checks on authored PRs
-3. Unresolved review on authored PRs (only with a cheap signal; skip deep thread fetch)
-4. Review requested on others' PRs
-5. Stale or red Dependabot PRs in these sets
-
-## Emit
-
-| Priority | Repo       | PR         | Blocker                                               | Invocation       |
-| -------- | ---------- | ---------- | ----------------------------------------------------- | ---------------- |
-| 1        | `org/repo` | `#N` title | conflicts \| red-ci \| review-requested \| dependabot | exact `/skill …` |
-
-Empty → `No PRs need attention in <org>.`
+End with one recommended next item. Do not invoke its route automatically.
