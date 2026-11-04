@@ -42,15 +42,15 @@ CSS only: no CDN, remote font, script, tracker, or network asset. Ordinary
 evidence links to the repository are allowed. Include:
 
 - repository, head SHA, time, scope, exclusions, and dirty-state note;
-- severity cards and counts for scanner alerts versus verified defects;
+- severity cards and counts for scanner alerts versus verified defects; name a
+  secret-like alert's evidence origin and never imply an unscanned source;
 - coverage matrix, tool versions/commands, network behavior, and checks skipped;
-- evidence-backed findings with redacted excerpts, confidence, impact, and next
-  action;
+- evidence-backed findings with redacted excerpts, confidence, impact, and next action;
 - for each verified finding: rule, path and line, CWE/OWASP mapping when valid,
   source-to-sink or control reasoning, exploit conditions, affected boundary,
   remediation, and verification status;
-- clickable evidence links pinned to the scanned head SHA, using
-  `REPOSITORY_WEB_URL/blob/HEAD_SHA/path#Lx-Ly`; never link to a moving ref;
+- every repository path must be clickable, including parser gaps, skipped files,
+  false positives, risks, and action items; pin links to the scanned head SHA;
 - scan statistics, parser failures, timeouts, skipped files, and the reason each
   material alert was confirmed, grouped, or dismissed;
 - false positives, accepted repository exceptions, residual risks, and unscanned
@@ -77,9 +77,8 @@ $code-review with the security lens. Treat REPOSITORY_PATH as the single target
 and REPOSITORY_WEB_URL as the base for evidence links. Read the repository's
 instructions and existing security configuration, then inventory its native
 scanners before proposing anything additional.
-
-First stay read-only: confirm the Git root and state, propose the exact tools,
-versions, commands, scope, exclusions, network/download/telemetry behavior,
+First stay read-only: confirm Git state, then propose exact tools, versions,
+commands, scope, exclusions, network/download/telemetry behavior,
 runtime, and report path. Stop for APPROVE SECURITY SCAN. For GIT_HISTORY,
 require HISTORY_SCAN: YES and stop for APPROVE SECURITY HISTORY SCAN instead.
 
@@ -94,7 +93,8 @@ vulnerabilities. Explain parse gaps and verify data flow, trust boundaries, and
 existing controls in code.
 For SANITIZED_HTML, create an offline report with summary cards, coverage,
 verified findings, scanner alerts, false-positive reasons, gaps, risks, and next
-actions. Link evidence to the exact scanned SHA on REPOSITORY_WEB_URL. Use direct
-headings: finding, evidence, why it matters, and fix. Avoid praise, repeated
-conclusions, and unsupported claims. Return the report path and a short summary.
+actions. Make every repository path clickable at the exact scanned SHA; use line
+anchors when known and a file link otherwise. Use direct headings: finding,
+evidence, why it matters, and fix. End with a short natural note about local raw
+artifacts and whether source changed. Avoid praise and unsupported conclusions.
 ```
