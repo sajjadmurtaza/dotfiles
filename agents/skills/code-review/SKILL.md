@@ -9,7 +9,9 @@ description: >-
 
 # Review
 
-Findings-first review of a working tree, branch, commit range, or PR: the `finish` baseline plus only the lenses the diff warrants. Never ask the user to choose a template. Vocabulary: [`../CONTEXT.md`](../CONTEXT.md).
+Findings-first review of local or PR changes: `finish` plus warranted lenses.
+Never ask the user to choose a template. Vocabulary:
+[`../CONTEXT.md`](../CONTEXT.md).
 
 ## Pick branch
 
@@ -37,7 +39,7 @@ Resolve scripts relative to this skill directory. `quality` skips this and runs 
 
 1. Always: [`reference/finish.md`](reference/finish.md).
 2. Behavior or tests changed: [`reference/tests.md`](reference/tests.md).
-3. Security-sensitive code, dependencies, agent skills, or MCP/tool admission: [`reference/security.md`](reference/security.md).
+3. Security-sensitive work: [`reference/security.md`](reference/security.md); scanner runs: [`reference/security-tools.md`](reference/security-tools.md); full/history/HTML: [`reference/security-report.md`](reference/security-report.md).
 4. Dead-compat signals: [`reference/legacy.md`](reference/legacy.md) — report only under `findings`/`publish`; deletion is `quality`-only.
 5. `quality`: [`reference/quality.md`](reference/quality.md) + [`reference/legacy.md`](reference/legacy.md) (always).
 6. `publish`: [`reference/publish.md`](reference/publish.md), [`reference/conventional-comments.md`](reference/conventional-comments.md), [`reference/github-state.md`](reference/github-state.md).

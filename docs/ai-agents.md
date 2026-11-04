@@ -161,4 +161,22 @@ agent/tool supply-chain checklist, stays read-only, and returns an
 install/adapt/reject recommendation. Add special scope only when needed; do not
 copy the full checklist into every prompt.
 
+For a local code security check, prefer the repository's configured scanners
+and run only the smallest check that covers the changed risk:
+
+```text
+Use $code-review with the security lens on the current diff. Read repository
+instructions and inventory existing security gates first. Prefer installed,
+pinned repository-native commands. Stay read-only: do not install tools,
+download rules or advisory data, enable telemetry, upload source or results,
+probe endpoints, or fix findings without my explicit approval. Separate scanner
+alerts from verified defects and report coverage gaps.
+```
+
+The saved tool-selection reference distinguishes SAST, dependency, secret, and
+image/IaC coverage. It does not run every scanner by default. For full-tree,
+Git-history, or sanitized HTML output, set `REPOSITORY_PATH`, `SECURITY_SCOPE`,
+`HISTORY_SCAN`, and `OUTPUT`; the skill presents an exact read-only scan plan
+and stops for approval before execution.
+
 Codex officially scans user skills in `~/.agents/skills`. See [OpenAI's skill documentation](https://developers.openai.com/codex/skills). The complete catalog and authoring rules live in [`../agents/skills/README.md`](../agents/skills/README.md).

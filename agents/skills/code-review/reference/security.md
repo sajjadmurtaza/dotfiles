@@ -1,8 +1,9 @@
 # Security
 
-Apply for authn/authz, sessions, secrets, permissions; confidential, regulated, or multi-tenant data; external interfaces, webhooks, workers; logs, audits, exports; dependencies; agent skills, MCP servers, retrieved content, tool permissions; or compliance posture. Otherwise skip. Project security guidance layers on top.
+Apply for authn/authz, sessions, secrets, permissions; confidential, regulated, or multi-tenant data; external interfaces, webhooks, workers; logs, audits, exports; dependencies; agent skills, MCP servers, retrieved content, tool permissions; or compliance posture. Else skip. Project security guidance layers on top.
 
 For agent/tool surfaces, load [`security-agent-tools.md`](security-agent-tools.md).
+Scanner choice/execution → [`security-tools.md`](security-tools.md).
 
 ## Method
 
@@ -20,7 +21,7 @@ For agent/tool surfaces, load [`security-agent-tools.md`](security-agent-tools.m
 
 ## Control mapping (not legal advice)
 
-Map only clearly applicable controls: `ISO 27001`, `BSI C5`; `NIS2`, `DORA`, `KRITIS`; `EU MDR`, `IEC 62304`, `ISO 13485`. Insufficient evidence → `Assessed: No` plus reason. State non-EU scope.
+Map only applicable controls: `ISO 27001`, `BSI C5`; `NIS2`, `DORA`, `KRITIS`; `EU MDR`, `IEC 62304`, `ISO 13485`. Insufficient evidence → `Assessed: No` plus reason. State non-EU scope.
 
 ## Output
 
