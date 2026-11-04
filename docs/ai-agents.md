@@ -108,6 +108,36 @@ agent can surface background-process output, monitor meaningful changes for the
 rest of this session. Stay read-only and do not execute routed actions.
 ```
 
+### Cursor one-copy start
+
+Open a Cursor Agent chat, choose `/pr-sweep` when it appears, and paste:
+
+```text
+Use the pr-sweep skill for profile PROFILE.
+
+Run doctor and one read-only GitHub attention scan. If the profile or dedicated
+GitHub authentication is missing, show the exact setup action and stop. If
+doctor passes, show only new or changed items with repository, PR number,
+reason, urgency, and exact recommended route.
+
+If Cursor can reliably surface background-process output, monitor meaningful
+changes for this session and stay quiet when nothing changes. Do not execute a
+route, edit code, rerun CI, deploy, push, comment, resolve, approve, or merge.
+```
+
+Run the prompt separately for each profile. Never combine company accounts,
+authentication directories, ledgers, owners, or repository rules in one scan.
+
+### Fixed-time checks
+
+The session watcher is not a scheduler. For fixed times, first make `doctor`
+and a manual scan pass, then create one read-only scheduled task per profile in
+a host that supports unattended runs. Use the location's IANA time zone so
+daylight-saving changes are handled, and keep the prompt limited to detection
+and routing until the first scheduled results have been reviewed. Scheduled
+network calls must be permitted without an interactive approval; otherwise the
+run should fail closed and report the missing permission.
+
 The monitor runs an initial scan, polls after three minutes, and backs off to
 ten-minute quiet intervals. It ends with the agent session or when explicitly
 stopped; it is not a daemon or scheduler. Unsupported hosts remain on-demand.

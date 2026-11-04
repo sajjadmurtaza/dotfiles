@@ -213,6 +213,11 @@ and start session monitoring when this agent can return background output.
 Do not execute the recommended routes.
 ```
 
+In Cursor, open an Agent chat, select `/pr-sweep` when it appears in the skill
+menu, and paste the same prompt. Use one profile per chat. The watcher belongs
+to that open agent session; fixed-time checks belong in a separate scheduled
+task after `doctor` and one manual scan succeed.
+
 Profile configuration and ledgers live under the user's config/state homes with
 owner-only permissions. They are not tracked by this repository. Automatic CI
 reruns are intentionally not part of the pilot. See the
