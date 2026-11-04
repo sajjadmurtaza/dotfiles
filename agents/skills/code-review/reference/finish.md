@@ -16,6 +16,13 @@ All lenses fold into this single report.
 
 **Executive Summary** — Production readiness: Yes / No / Conditional; top risks; immediate actions.
 
+**References in review text** — Preserve verified PR, ticket, and repository URLs as
+clickable Markdown links; do not reduce an available link to bare `repo#123`. Explain
+the actual dependency and why it matters in normal teammate language. Avoid robotic
+directives such as “Coordinate merge with service-a#123 per the ticket note.” Prefer
+“This needs to land with [service-a#123](URL) because both changes are part of the same
+cutover.” If the relationship or URL is not verified, say so instead of inventing it.
+
 ## Incident / fix-diff postures
 
 For `fix`, `Revert`, or production-incident diffs, check (fold into Findings; no extra lens):
