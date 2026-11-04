@@ -1,20 +1,28 @@
 # Publish
 
-End-to-end PR review: retrieve → fresh multi-lens ledger → reconcile drafts/threads → recheck SHA → submit one friendly `COMMENT` review → thread replies → verify URLs. Load [`conventional-comments.md`](conventional-comments.md) when drafting. Mutation steps → [`github-state.md`](github-state.md).
+Review end to end: retrieve → fresh ledger → reconcile → recheck SHA → publish
+one `COMMENT` review → verify URLs. Draft with
+[`conventional-comments.md`](conventional-comments.md); mutate through
+[`github-state.md`](github-state.md).
 
 ## Hard rules
 
-- Submit only `event: "COMMENT"`; never `REQUEST_CHANGES` or `APPROVE`, even for Critical. Reject any payload with another event.
-- Build a **fresh** ledger against the PR head; existing pending drafts are reconcile input, not truth.
-- Never edit others' comments or resolve their threads; never publish on a stale head SHA or guessed line; never change application code.
+- Submit only `event: "COMMENT"`; reject `REQUEST_CHANGES` or `APPROVE`.
+- Build a **fresh** head ledger; pending drafts are input, not truth.
+- Never edit or resolve others' comments, publish against stale/guessed locations,
+  or change application code.
 
 ## 1. Retrieve
 
-Use the `pr-context.sh --publish` snapshot from Shared prep (or run `./scripts/pr-context.sh --publish <pr>` once). Read patch + code at the PR head; record the verified head SHA. Apply target-repo `AGENTS.md`.
+Use the Shared-prep `pr-context.sh --publish` snapshot, or run it once. Read the
+head patch/code, record its SHA, and apply target-repo `AGENTS.md`.
 
 ## 2. Ledger
 
-Apply `finish` + selected lenses. Publish high-confidence Critical/Important; Nice-to-Have only if materially useful. Drop decline, soft, optional, speculative, duplicate, already-answered. Prefer a substantive reply on an existing thread over a duplicate inline. Seek 0–2 earned `praise`.
+Apply `finish` plus selected lenses. Publish high-confidence Critical/Important
+and only useful Nice-to-Have findings. Drop soft, speculative, duplicate, or
+answered items. Prefer substantive existing-thread replies. Seek 0–2 earned
+`praise`.
 
 | Field      | Values                                                            |
 | ---------- | ----------------------------------------------------------------- |
@@ -35,4 +43,7 @@ Fail-closed procedure: [`github-state.md`](github-state.md) — keep verified dr
 
 - `## Review findings`, one outcome sentence, severity-ordered findings with impact (don't paste inline bodies), optional short "What looks solid".
 - Never "Request changes" / "blocking review". Conventional Comments only for inline comments and replies.
-- Close with "When this is ready, feel free to re-request my review."
+- Do not append a canned courtesy line, sign-off, or invitation to re-request review.
+  End after the last useful finding unless a concrete next action would help the
+  author. When follow-up is useful, name the specific missing evidence or change;
+  do not rotate generic synonyms merely to make templated language look varied.
