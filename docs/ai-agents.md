@@ -176,7 +176,37 @@ alerts from verified defects and report coverage gaps.
 The saved tool-selection reference distinguishes SAST, dependency, secret, and
 image/IaC coverage. It does not run every scanner by default. For full-tree,
 Git-history, or sanitized HTML output, set `REPOSITORY_PATH`, `SECURITY_SCOPE`,
-`HISTORY_SCAN`, and `OUTPUT`; the skill presents an exact read-only scan plan
-and stops for approval before execution.
+`ANALYSIS_DEPTH`, `SAST_ENGINE`, `HISTORY_SCAN`, and `OUTPUT`; the skill presents
+an exact read-only scan plan and stops for approval before execution.
+
+### Optional Semgrep CE setup
+
+The default `rails` profile does not install Semgrep. Opt into the dotfiles
+`ai` profile when the Homebrew formula is sufficient:
+
+```sh
+./install --profile rails --profile ai
+semgrep --version
+```
+
+For a reproducible standalone version, review the official release and install
+a pinned Semgrep CE tool with the existing Python tool manager instead:
+
+```sh
+uv tool install 'semgrep==APPROVED_VERSION'
+semgrep --version
+```
+
+Use one installation path and confirm the resolved executable with
+`command -v semgrep`. Neither path downloads registry rules until a scan selects
+them.
+
+Use `--metrics off` for local scans. Registry packs such as `p/ruby` and
+`p/ruby-on-rails-xss` download rules but keep the scanned source local; obtain
+network/rule-download approval first. Save JSON and SARIF in a private temporary
+directory, keep reports untracked, and manually verify alerts. To upgrade,
+review the official release notes, repin the approved version with
+`uv tool install --force 'semgrep==NEW_APPROVED_VERSION'`, and rerun a known
+scan before relying on it.
 
 Codex officially scans user skills in `~/.agents/skills`. See [OpenAI's skill documentation](https://developers.openai.com/codex/skills). The complete catalog and authoring rules live in [`../agents/skills/README.md`](../agents/skills/README.md).

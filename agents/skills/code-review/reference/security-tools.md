@@ -22,13 +22,31 @@ leads, not verified vulnerabilities.
 | --- | --- | --- |
 | Rails source risks | Repository-configured Brakeman | Reuse only when employer/project licensing permits it. |
 | Ruby gems | Repository-configured `bundler-audit` or `ruby-audit` | Update advisory data only with network approval. |
-| Multi-language SAST | Opengrep with reviewed, versioned local rules | Do not fetch an unreviewed remote ruleset. Semgrep CE is an alternative, not a second default scanner. |
+| Multi-language SAST | Repository-approved Semgrep CE or Opengrep | Pin the engine and rules. For Semgrep CE, use `--metrics off`; registry packs download rules, so disclose that network access before approval. |
 | Secrets | Gitleaks CLI | `dir` scans files; `git` scans history. Redact findings and rotate a real exposed secret. The hosted Action has different licensing. |
 | Dependencies/SBOM | OSV-Scanner | Skip when the repository already has equivalent ecosystem coverage. Call analysis may execute builds. |
 | Images, IaC, filesystem | Trivy | Reuse repository severity, ignore, and database policy. |
 
 Do not stack every tool. SAST, dependency, secret, and image scanners answer
 different questions; select only the uncovered risk.
+
+## Semgrep CE
+
+Use Semgrep when the repository or user selects it and code-aware SAST is the
+missing layer. Prefer reviewed local rules. For Ruby/Rails, the official
+registry packs `p/ruby` and `p/ruby-on-rails-xss` are a reasonable advisory
+starting point after rule-download approval. Keep source local, disable metrics,
+and produce JSON or SARIF for evidence:
+
+```sh
+semgrep scan --config p/ruby --config p/ruby-on-rails-xss \
+  --metrics off --json-output semgrep.json --sarif-output semgrep.sarif .
+```
+
+Run a full tracked-tree scan for repository coverage. Community rules are leads:
+inspect the data flow, trust boundary, and repository controls before assigning
+severity. Record parse failures, timeouts, large-file skips, and excluded paths
+as coverage gaps. Never label raw alert counts as vulnerabilities.
 
 ## Output
 
