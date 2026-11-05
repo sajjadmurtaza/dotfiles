@@ -7,17 +7,13 @@ ruby <skill-dir>/scripts/attention doctor --profile PROFILE
 ruby <skill-dir>/scripts/attention tick --profile PROFILE
 ```
 
-Render only returned `items`: repository, PR number, kind, URL, and exact route.
-Do not fetch PR bodies, comments, diffs, or CI logs in this branch. `quiet` means
-no attention fingerprint changed since the previous scan; use `summary` only
-when the user asks to see previously recorded items.
+Turn returned `items` into a short private operator brief—never raw JSON. For
+each item use one natural line: linked repository/PR, verified reason, and exact
+route. Avoid canned openings, repeated closings, urgency theatre, and claims of
+work not performed. Do not fetch bodies, comments, diffs, or CI logs. `quiet`
+means no fingerprint changed; use `summary` only for recorded items.
 
-The helper classifies one primary attention type per PR:
-
-1. conflicts;
-2. failing CI;
-3. changes requested;
-4. review requested;
-5. Dependabot review.
+Engine order is deterministic: conflicts, failing CI, and review feedback are
+`now`; review requests are `soon`; Dependabot reviews are `batch`.
 
 End with one recommended next item. Do not invoke its route automatically.

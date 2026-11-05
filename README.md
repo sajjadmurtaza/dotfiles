@@ -201,22 +201,37 @@ git config --local --get-regexp '^user\.(name|email)$'
 ### Read-only GitHub attention
 
 `$pr-sweep` can keep separate local profiles for different GitHub accounts and
-monitor meaningful PR changes while the current agent session remains open. It
-routes CI failures, conflicts, review feedback, review requests, and Dependabot
-PRs to the existing specialist skills; it never changes code or GitHub itself.
+detect meaningful PR changes. It routes CI failures, conflicts, review feedback,
+review requests, and Dependabot PRs to the existing specialist skills; it never
+changes code or GitHub itself.
+
+> [!IMPORTANT]
+> The detector and wake-up mechanism are separate. Choose the mode your host can
+> actually support; a terminal watcher alone does not guarantee a notification.
+
+| Need | Best mode | What to expect |
+| --- | --- | --- |
+| Check now | `$pr-sweep` report | One read-only scan and the next recommended route |
+| Active Claude Code session | Session monitor | 3-minute checks, then 10-minute quiet backoff while that session stays alive |
+| Automatic Codex alerts | Scheduled heartbeat | One `tick` per run; quiet results stay silent and changed items return to Scheduled/chat |
+| Cursor foreground chat | Report first | Monitor only after a wake signal demonstrably returns to the same Agent chat |
+
+The resulting brief is private and factual: one linked line per changed PR with
+the reason and next route. The sweep never posts comments or reusable boilerplate
+to teammates; external replies stay in the repository's normal review workflow.
 
 Start with:
 
 ```text
-Use $pr-sweep for profile PROFILE. Stay read-only, show what needs attention,
-and start session monitoring when this agent can return background output.
-Do not execute the recommended routes.
+Use $pr-sweep for profile PROFILE. Run doctor and one read-only scan. Show only
+new or changed attention and the exact recommended route. Do not execute it.
 ```
 
-In Cursor, open an Agent chat, select `/pr-sweep` when it appears in the skill
-menu, and paste the same prompt. Use one profile per chat. The watcher belongs
-to that open agent session; fixed-time checks belong in a separate scheduled
-task after `doctor` and one manual scan succeed.
+For automatic Codex monitoring, use the skill's **schedule** branch after the
+manual scan succeeds. A ten-minute work-window schedule is a heartbeat; checks
+at 08:00 and 15:00 are only two snapshots. Claude Code can use the **monitor**
+branch while its session remains active. Cursor stays on-demand unless its Agent
+chat proves that background output wakes that same conversation.
 
 Profile configuration and ledgers live under the user's config/state homes with
 owner-only permissions. They are not tracked by this repository. Automatic CI

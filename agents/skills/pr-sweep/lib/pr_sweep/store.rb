@@ -52,42 +52,46 @@ module PrSweep
     end
 
     def reconcile(items)
-      ledger = load_ledger
-      current_ids = []
-      changed = []
+      with_ledger_lock do
+        ledger = load_ledger
+        current_ids = []
+        changed = []
 
-      items.each do |item|
-        id = item.fetch("id")
-        current_ids << id
-        previous = ledger["items"][id]
-        changed << item if previous.nil? || previous["fingerprint"] != item["fingerprint"]
-        ledger["items"][id] = item.merge(
-          "status" => previous && previous["fingerprint"] == item["fingerprint"] ? previous["status"] : "new",
-          "last_seen_at" => timestamp
-        )
+        items.each do |item|
+          id = item.fetch("id")
+          current_ids << id
+          previous = ledger["items"][id]
+          changed << item if previous.nil? || previous["fingerprint"] != item["fingerprint"]
+          ledger["items"][id] = item.merge(
+            "status" => previous && previous["fingerprint"] == item["fingerprint"] ? previous["status"] : "new",
+            "last_seen_at" => timestamp
+          )
+        end
+
+        ledger["items"].delete_if { |id, _item| !current_ids.include?(id) }
+        ledger["last_scan_at"] = timestamp
+        write_json(ledger_path, ledger)
+        changed
       end
-
-      ledger["items"].delete_if { |id, _item| !current_ids.include?(id) }
-      ledger["last_scan_at"] = timestamp
-      write_json(ledger_path, ledger)
-      changed
     end
 
     def decide(id, status)
       raise Error, "unknown decision status" unless STATUSES.include?(status)
 
-      ledger = load_ledger
-      item = ledger["items"][id]
-      raise Error, "unknown attention item: #{id}" unless item
+      with_ledger_lock do
+        ledger = load_ledger
+        item = ledger["items"][id]
+        raise Error, "unknown attention item: #{id}" unless item
 
-      item["status"] = status
-      item["decided_at"] = timestamp
-      write_json(ledger_path, ledger)
-      item
+        item["status"] = status
+        item["decided_at"] = timestamp
+        write_json(ledger_path, ledger)
+        item
+      end
     end
 
     def summary
-      load_ledger
+      with_ledger_lock(shared: true) { load_ledger }
     end
 
     private
@@ -112,6 +116,21 @@ module PrSweep
 
     def ledger_path
       File.join(profile_dir(@state_home), "ledger.json")
+    end
+
+    def lock_path
+      File.join(profile_dir(@state_home), "ledger.lock")
+    end
+
+    def with_ledger_lock(shared: false)
+      prepare_private_directory(File.dirname(lock_path), "state profile directory")
+      File.open(lock_path, File::RDWR | File::CREAT, 0o600) do |file|
+        File.chmod(0o600, lock_path)
+        file.flock(shared ? File::LOCK_SH : File::LOCK_EX)
+        yield
+      ensure
+        file.flock(File::LOCK_UN)
+      end
     end
 
     def load_ledger

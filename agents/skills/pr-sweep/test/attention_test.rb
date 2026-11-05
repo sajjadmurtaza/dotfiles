@@ -35,8 +35,10 @@ class AttentionTest < Minitest::Test
 
     @store.reconcile([attention_item("one")])
     state_path = File.join(@state_home, "company-a", "ledger.json")
+    lock_path = File.join(@state_home, "company-a", "ledger.lock")
     assert_equal(0o700, File.stat(File.dirname(state_path)).mode & 0o777)
     assert_equal(0o600, File.stat(state_path).mode & 0o777)
+    assert_equal(0o600, File.stat(lock_path).mode & 0o777)
   end
 
   def test_rejects_path_traversal_profile
@@ -130,6 +132,11 @@ class AttentionTest < Minitest::Test
     assert_equal("attention", result.fetch("status"))
     kinds = result.fetch("items").map { |item| item.fetch("kind") }
     assert_equal(%w[red-ci review-requested], kinds.sort)
+    assert_equal(%w[now soon], result.fetch("items").map { |item| item.fetch("urgency") })
+    assert_equal(
+      ["the latest commit has failing checks", "your review was requested"],
+      result.fetch("items").map { |item| item.fetch("reason") }
+    )
     routes = result.fetch("items").map { |item| item.fetch("route") }.join("\n")
     assert_includes(routes, "$pull-request fix-ci")
     assert_includes(routes, "$code-review")
@@ -161,9 +168,29 @@ class AttentionTest < Minitest::Test
       expected_login: "developer-a", owners: ["example-org"],
       repositories: ["example-org/backend"], gh_config_dir: @gh_config_dir
     )
-    client = PrSweep::GithubClient.new(configuration, runner: fixture_runner)
+    calls = []
+    fixture = fixture_runner
+    client = PrSweep::GithubClient.new(configuration, runner: lambda do |arguments, environment|
+      calls << arguments
+      fixture.call(arguments, environment)
+    end)
 
     assert_equal(["https://github.com/example-org/backend/pull/1"], client.search.map { |row| row["url"] })
+    search_calls = calls.select { |arguments| arguments.first(2) == %w[search prs] }
+    assert(search_calls.all? { |arguments| arguments.include?(PrSweep::GithubClient::SEARCH_LIMIT) })
+  end
+
+  def test_review_queue_skips_drafts_and_orders_recent_activity_first
+    client = review_client([
+      search_row("backend", 1, "teammate", "older").merge("updatedAt" => "2026-11-01T10:00:00Z"),
+      search_row("backend", 2, "teammate", "newer").merge("updatedAt" => "2026-11-03T10:00:00Z"),
+      search_row("backend", 3, "teammate", "draft").merge("isDraft" => true)
+    ])
+
+    result = PrSweep::Scanner.new(client: client, store: @store).tick
+
+    assert_equal([2, 1], result.fetch("items").map { |item| item.fetch("number") })
+    refute(result.fetch("items").any? { |item| item.key?("_rank") || item.key?("_updated_at") })
   end
 
   def test_decision_is_recorded_without_exposing_fingerprint_in_summary_command
@@ -196,6 +223,34 @@ class AttentionTest < Minitest::Test
     assert_equal(0, status)
     assert_equal(1, output.string.scan("PR_SWEEP_WAKE").size)
     assert_equal([1, 1, 2], sleeps)
+  end
+
+  def test_watch_reports_one_environment_error_and_recovers
+    output = StringIO.new
+    attempts = 0
+    healthy = fixture_runner
+    runner = lambda do |arguments, environment|
+      if arguments.first(2) == %w[api user] && (attempts += 1) <= 2
+        raise PrSweep::Error, "temporary GitHub failure"
+      end
+
+      healthy.call(arguments, environment)
+    end
+
+    status = PrSweep::CLI.run(
+      ["watch", "--profile", "company-a", "--config-home", @config_home,
+       "--state-home", @state_home, "--max-cycles", "3", "--interval", "1",
+       "--quiet-interval", "2"],
+      stdout: output, stderr: StringIO.new, runner: runner, sleep_fn: ->(_seconds) {}
+    )
+
+    assert_equal(0, status)
+    wakes = output.string.lines.grep(/^PR_SWEEP_WAKE /)
+    assert_equal(2, wakes.size)
+    assert_includes(wakes.first, '"status":"environment-error"')
+    assert_includes(wakes.first, '"message":"GitHub check failed; run doctor"')
+    refute_includes(wakes.first, "temporary GitHub failure")
+    assert_includes(wakes.last, '"status":"attention"')
   end
 
   private
@@ -260,5 +315,12 @@ class AttentionTest < Minitest::Test
       "isResolved" => false,
       "comments" => { "nodes" => [{ "author" => { "login" => "reviewer" } }] }
     }
+  end
+
+  def review_client(rows)
+    Object.new.tap do |client|
+      client.define_singleton_method(:verify_login!) { "developer-a" }
+      client.define_singleton_method(:search) { rows.map { |row| row.merge("role" => "review-requested") } }
+    end
   end
 end

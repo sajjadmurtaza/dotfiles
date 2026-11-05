@@ -91,20 +91,37 @@ module PrSweep
       target = build_scanner(options)
       cycles = 0
       quiet = 0
+      last_error = nil
       loop do
-        result = target.tick
-        cycles += 1
-        if result["status"] == "attention"
+        begin
+          result = target.tick
+          if result["status"] == "attention"
+            quiet = 0
+            emit_wake(result)
+          else
+            quiet += 1
+          end
+          last_error = nil
+        rescue Error => e
           quiet = 0
-          @stdout.puts("PR_SWEEP_WAKE #{JSON.generate(result)}")
-          @stdout.flush
-        else
-          quiet += 1
+          unless last_error == e.message
+            emit_wake(
+              "profile" => options.fetch(:profile), "status" => "environment-error",
+              "message" => "GitHub check failed; run doctor"
+            )
+          end
+          last_error = e.message
         end
+        cycles += 1
         break if options[:max_cycles] && cycles >= options[:max_cycles]
 
         @sleep_fn.call(quiet >= 2 ? options[:quiet_interval] : options[:interval])
       end
+    end
+
+    def emit_wake(payload)
+      @stdout.puts("PR_SWEEP_WAKE #{JSON.generate(payload)}")
+      @stdout.flush
     end
 
     def scanner

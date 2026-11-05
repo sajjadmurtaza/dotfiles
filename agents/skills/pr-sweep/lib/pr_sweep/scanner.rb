@@ -1,11 +1,30 @@
 # frozen_string_literal: true
 
 require "digest"
+require "time"
 
 module PrSweep
   class Scanner
     FAILING = %w[FAILURE ERROR TIMED_OUT STARTUP_FAILURE CANCELLED].freeze
     BOT_PREFIXES = %w[dependabot app/dependabot].freeze
+    PRIVATE_FIELDS = %w[_rank _updated_at].freeze
+    ATTENTION = {
+      "conflicts" => {
+        "rank" => 0, "urgency" => "now", "reason" => "the branch has merge conflicts"
+      }.freeze,
+      "red-ci" => {
+        "rank" => 1, "urgency" => "now", "reason" => "the latest commit has failing checks"
+      }.freeze,
+      "review-feedback" => {
+        "rank" => 2, "urgency" => "now", "reason" => "review feedback is unresolved"
+      }.freeze,
+      "review-requested" => {
+        "rank" => 3, "urgency" => "soon", "reason" => "your review was requested"
+      }.freeze,
+      "dependabot" => {
+        "rank" => 4, "urgency" => "batch", "reason" => "a dependency update needs review"
+      }.freeze
+    }.freeze
 
     def initialize(client:, store:)
       @client = client
@@ -15,6 +34,13 @@ module PrSweep
     def tick
       login = @client.verify_login!
       items = @client.search.map { |row| classify(row, login) }.compact
+      items.sort_by! do |item|
+        [
+          item.fetch("_rank"), -timestamp(item.fetch("_updated_at")),
+          item.fetch("repository"), -item.fetch("number")
+        ]
+      end
+      items.map! { |item| item.reject { |key, _value| PRIVATE_FIELDS.include?(key) } }
       changed = @store.reconcile(items)
       {
         "profile" => @store.profile,
@@ -29,6 +55,7 @@ module PrSweep
     def classify(row, login)
       repository = repository_name(row)
       return unless repository
+      return if row["isDraft"]
 
       role = row.fetch("role")
       if role == "review-requested"
@@ -36,8 +63,6 @@ module PrSweep
         kind = bot?(author) ? "dependabot" : "review-requested"
         return build_item(row, repository, kind)
       end
-
-      return if row["isDraft"]
 
       details = @client.details(row.fetch("url"))
       kind = authored_kind(details)
@@ -76,6 +101,10 @@ module PrSweep
         "number" => row.fetch("number"),
         "url" => row.fetch("url"),
         "kind" => kind,
+        "_rank" => attention(kind).fetch("rank"),
+        "_updated_at" => evidence.fetch("updated_at").to_s,
+        "urgency" => attention(kind).fetch("urgency"),
+        "reason" => attention(kind).fetch("reason"),
         "route" => route(kind, row.fetch("url")),
         "fingerprint" => Digest::SHA256.hexdigest([identity, evidence].inspect)
       }
@@ -103,6 +132,16 @@ module PrSweep
 
     def bot?(login)
       BOT_PREFIXES.any? { |prefix| login.start_with?(prefix) }
+    end
+
+    def attention(kind)
+      ATTENTION.fetch(kind)
+    end
+
+    def timestamp(value)
+      Time.parse(value).to_i
+    rescue ArgumentError
+      0
     end
   end
 end

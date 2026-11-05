@@ -1,16 +1,20 @@
 # Monitor
 
-First run the **report** branch. If the host supports a session-owned background
-process whose output returns to the agent, start:
+After **report**, choose wake bridge:
+
+| Host | Reliable mode |
+| --- | --- |
+| Claude Code | Attached `watch`; re-arm on expiry |
+| Codex Desktop | **schedule**; terminal cannot wake chat |
+| Cursor | **report** unless wake is proven |
+
+For a proven session wake bridge:
 
 ```sh
 ruby <skill-dir>/scripts/attention watch --profile PROFILE
 ```
 
-The watcher checks after three minutes, then uses ten-minute quiet intervals
-after two unchanged scans. It emits `PR_SWEEP_WAKE` only for a changed attention
-fingerprint. On wake, show the returned items and routes; do not execute them.
-
-Keep the host's process/session identifier so **wrap** can terminate it. If the
-host cannot reliably return background output, say so and remain on-demand.
-Never detach the process or claim monitoring survives an agent/app restart.
+It checks after three minutes and backs off to ten. Changed attention or the
+first distinct error emits `PR_SWEEP_WAKE`; retries recover. Never execute
+routes. Keep the session ID for **wrap**; never detach. Claim automatic only
+after an unprompted wake.

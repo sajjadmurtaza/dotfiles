@@ -5,6 +5,7 @@ require "open3"
 
 module PrSweep
   class GithubClient
+    SEARCH_LIMIT = "1000"
     SEARCH_FIELDS = "url,repository,number,updatedAt,isDraft,author".freeze
     DETAIL_FIELDS = [
       "url", "headRefOid", "mergeable", "mergeStateStatus", "statusCheckRollup",
@@ -72,7 +73,7 @@ module PrSweep
       selector = role == "authored" ? "--author=@me" : "--review-requested=@me"
       raw = run([
                   "search", "prs", selector, "--owner=#{owner}", "--state=open",
-                  "--json", SEARCH_FIELDS, "--limit", "50"
+                  "--json", SEARCH_FIELDS, "--limit", SEARCH_LIMIT
                 ])
       parse_json(raw).map { |row| row.merge("role" => role) }
     end

@@ -100,12 +100,38 @@ Agents can also select a skill automatically from its description. Explicit invo
 profile supplies the expected GitHub login, allowed owners/repositories, and a
 dedicated `GH_CONFIG_DIR`; no company or account is hardcoded in the skill.
 
-Use the skill's `setup` branch once per profile. Thereafter:
+Use the skill's `setup` branch once per profile. Then choose the operating mode
+instead of assuming every agent can wake itself:
+
+| Mode | Use when | Lifecycle |
+| --- | --- | --- |
+| **Scan now** | You want the current queue | One `doctor` + `tick`, then stop |
+| **Session monitor** | Claude Code or another host demonstrably returns background output | Checks at 3 minutes, then 10-minute quiet intervals; ends with the session |
+| **Codex heartbeat** | You want unattended notifications | Scheduled task runs one `tick`; ledger suppresses unchanged items |
+| **Fixed snapshots** | Morning/afternoon summaries are enough | Scheduled at exact local times; not continuous monitoring |
+
+The Ruby helper is the detector. The active-session monitor or Codex scheduled
+task is the wake bridge. Verify both independently: a successful `tick` proves
+detection; only a `PR_SWEEP_WAKE` or scheduled run arriving without another user
+prompt proves notification.
+
+The sweep is private triage. It never posts generated text to teammates. Its
+brief uses one factual line per changed PR and avoids canned greetings,
+conclusions, or claims of work not performed. Any external reply goes through
+the target repository's review/PR workflow, with the actual thread and evidence
+loaded first.
+
+Conflicts, failing CI, and unresolved feedback sort ahead of review requests and
+dependency updates; drafts are ignored and recent activity sorts first within a
+tier. Fingerprints suppress unchanged items, an owner-only lock protects
+overlapping manual/scheduled runs, and a repeated GitHub outage wakes once while
+the watcher keeps retrying.
+
+For one scan:
 
 ```text
-Use $pr-sweep for profile PROFILE. Run doctor and one attention scan. If this
-agent can surface background-process output, monitor meaningful changes for the
-rest of this session. Stay read-only and do not execute routed actions.
+Use $pr-sweep for profile PROFILE. Run doctor and one read-only attention scan.
+Show only changed items and exact routes. Do not execute routed actions.
 ```
 
 ### Cursor one-copy start
@@ -120,23 +146,40 @@ GitHub authentication is missing, show the exact setup action and stop. If
 doctor passes, show only new or changed items with repository, PR number,
 reason, urgency, and exact recommended route.
 
-If Cursor can reliably surface background-process output, monitor meaningful
-changes for this session and stay quiet when nothing changes. Do not execute a
-route, edit code, rerun CI, deploy, push, comment, resolve, approve, or merge.
+Stay on-demand unless this Agent chat can demonstrably receive background
+process output. Do not execute a route, edit code, rerun CI, deploy, push,
+comment, resolve, approve, or merge.
 ```
 
 Run the prompt separately for each profile. Never combine company accounts,
 authentication directories, ledgers, owners, or repository rules in one scan.
 
+### Codex automatic heartbeat
+
+First make `doctor` and one manual scan pass. Then invoke `$pr-sweep`'s
+**schedule** branch and create one read-only Codex Desktop task per profile. Use
+the location's IANA time zone so daylight-saving changes are handled. A
+ten-minute work-window cadence monitors changes; exact morning/afternoon times
+produce snapshots. The scheduled prompt runs exactly one `tick`, stays silent
+when quiet, and reports changed items without executing their routes.
+
+Review the saved profile, project, time zone, cadence, and first runs in Codex
+Scheduled. Network access must work without an interactive approval; otherwise
+the run reports the blocker and stops. OpenAI documents that scheduled tasks can
+invoke skills and use minute-based intervals in a chat: [Scheduled
+tasks](https://learn.chatgpt.com/docs/automations).
+
+### Claude Code active-session monitor
+
+Use `$pr-sweep`'s **monitor** branch. It keeps the watcher attached to the active
+session and reacts only to `PR_SWEEP_WAKE`. This is the same two-layer pattern:
+the Ruby process polls cheaply, while the host waits for its output. Re-arm the
+host monitor if it has a time limit; closing the session stops monitoring.
+
 ### Fixed-time checks
 
-The session watcher is not a scheduler. For fixed times, first make `doctor`
-and a manual scan pass, then create one read-only scheduled task per profile in
-a host that supports unattended runs. Use the location's IANA time zone so
-daylight-saving changes are handled, and keep the prompt limited to detection
-and routing until the first scheduled results have been reviewed. Scheduled
-network calls must be permitted without an interactive approval; otherwise the
-run should fail closed and report the missing permission.
+Create a scheduled task with exact times when two daily summaries are enough.
+Do not describe an 08:00/15:00 schedule as continuous CI or review monitoring.
 
 The monitor runs an initial scan, polls after three minutes, and backs off to
 ten-minute quiet intervals. It ends with the agent session or when explicitly
