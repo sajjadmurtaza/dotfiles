@@ -94,6 +94,37 @@ Agents can also select a skill automatically from its description. Explicit invo
 | Service-health review | `ops-chore` | admitted fixes can enter `$dev` plan |
 | PR attention or session watch | `pr-sweep` | exact `pull-request`, `dependabot`, or `code-review` action |
 
+## Optional EGM design gate
+
+[Elephant-Goldfish Model](https://github.com/google/elephant-goldfish-model)
+is an optional design plugin, not a replacement for `dev`, repository rules,
+tests, or code review. Use it only when a feature has meaningful competing
+designs, unclear ownership, privacy/retention policy, irreversible behavior, or
+cross-system rollout. Routine fixes stay in the normal pipeline. Persisted-field
+and multi-stage lifecycle work always loads the conditional
+`dev/reference/lifecycle-completeness.md` checkpoint, whether or not EGM is used.
+
+Install the upstream plugin separately from this skill store:
+
+```sh
+codex plugin marketplace add google/elephant-goldfish-model
+codex plugin add egm@egm
+
+claude plugin marketplace add google/elephant-goldfish-model
+claude plugin install egm@egm
+```
+
+Start a new session afterward. In Codex, select the EGM skill from the skill
+picker. In Claude Code, begin with `/egm:egm-brainstorm`, then use
+`/egm:egm-draft` and `/egm:egm-review`. Fresh-context review requires a host
+that can create isolated subagents; if that cannot be verified, treat the EGM
+review as inconclusive and use a separate review session.
+
+Cursor is documentation-only in this setup: design in Codex or Claude, approve
+the resulting document, then implement that approved design in Cursor using the
+normal repository workflow. Do not copy EGM into this repository or install an
+unverified adapter to make the clients look identical.
+
 ## Read-only GitHub attention
 
 `pr-sweep` has one shared implementation for all repositories. A named local

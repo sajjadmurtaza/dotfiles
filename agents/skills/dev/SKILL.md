@@ -27,7 +27,7 @@ Never ask the user to pick when signals are clear.
 1. **AGENTS.md load** / observability / security cues: [`../CONTEXT.md`](../CONTEXT.md). Co-load the security lens during implement when clearly needed. Rails matrix stays in the overlay / `AGENTS.md`.
 2. **Classify:** `surgical` | `design` | `review-hand-off`.
    - Load [`architecture/reference/axioms.md`](../architecture/reference/axioms.md) on **every** `implement`. Load `architecture` `SKILL.md` + matched references only when `design` is earned.
-   - Earn `design` on: dual ownership / shallow modules / primitive obsession across boundaries / structural cleanup ask / measured perf / type-driven refactor; also named GoF / which-pattern asks. Ambiguous → prefer `design`.
+   - Earn `design` on: dual ownership / shallow modules / primitive obsession across boundaries / structural cleanup ask / measured perf / type-driven refactor; also privacy-sensitive or irreversible multi-stage lifecycle policy, and named GoF / which-pattern asks. Ambiguous → prefer `design`.
    - **Plan inheritance:** prompt names a plan path and phase id → inherit its classification and architecture decisions; no second pass; axioms stay active.
    - **Gated:** `design` earned without inheritance → invoke `architecture` and document seam decisions in the plan or milestone ledger **before** writing code.
    - Packs may only append "also earn when…" lists. `review-hand-off` → stop → `code-review`.
@@ -43,6 +43,8 @@ Never ask the user to pick when signals are clear.
    | `.ts` / `.tsx` / `.js` / `.jsx`                                           | `typescript-dev` (+ `reference.md`) |
 
 4. Tests / dual paths / acceptance → load [`reference/surgical-laws.md`](reference/surgical-laws.md).
+   Persisted-field or multi-stage data-lifecycle work → also load
+   [`reference/lifecycle-completeness.md`](reference/lifecycle-completeness.md).
 5. **Compat ask:** classify internal vs stable public. Possibly-breaking change to a stable surface with unclear permission → ask first. No silent shims, no silent breaks. Packs only name what counts as stable.
 6. **No destructive git:** never `push --force`, hard reset, or other irreversible git unless explicitly asked.
 7. Material API claim → load [`reference/api-truth.md`](reference/api-truth.md).

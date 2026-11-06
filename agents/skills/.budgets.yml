@@ -28,8 +28,9 @@ words:
   dependabot/reference/pr-commands.md: 146
   dependabot/reference/triage.md: 153
   dependabot/reference/yml-keys.md: 84
-  dev/SKILL.md: 785
+  dev/SKILL.md: 798
   dev/reference/api-truth.md: 101
+  dev/reference/lifecycle-completeness.md: 386
   dev/reference/phase-commits.md: 223
   dev/reference/surgical-laws.md: 101
   docs/SKILL.md: 308
